@@ -3,6 +3,8 @@ import express from 'express';
 import { handleEvent } from './bot.js';
 import { exchangeCodeForToken } from './lark.js';
 
+
+
 const app = express();
 app.use(express.json());
 
@@ -51,6 +53,8 @@ app.post('/webhook', async (req, res) => {
   await handleEvent(body);
 });
 
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
