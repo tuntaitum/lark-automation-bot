@@ -1,37 +1,25 @@
-import { sendDirectMessage, sendGroupMessage, copyTemplate } from './lark.js';
+import { sendGroupMessage, sendDirectMessage, copyTemplate } from './lark.js';
+import { getUserTokens } from './tokenStore.js';
 
 const TRIGGER_KEYWORD = '!newSNsheet';
-const DESIGNATED_CHAT_ID = process.env.LARK_GROUP_CHAT_ID; // add this to .env
+const DESIGNATED_CHAT_ID = process.env.LARK_GROUP_CHAT_ID;
 
 export async function handleEvent(body) {
   try {
-    // schema 2.0 — event type is in header
     const eventType = body?.header?.event_type;
-
-
-    if (eventType !== 'im.message.receive_v1') {
-      console.log('Ignoring event type:', eventType);
-      return;
-    }
+    if (eventType !== 'im.message.receive_v1') return;
 
     const event = body?.event;
     if (!event?.message) return;
+
+    if (event.sender.sender_type === 'app') return;
 
     const messageContent = JSON.parse(event.message.content);
     const text = messageContent.text?.trim();
     const senderUserId = event.sender.sender_id.user_id;
 
-    if (event.sender.sender_type == 'app') {
-      console.log('Ignoring bot own message');
-      return;
-    }
-
-    console.log('Message received:', text);
-
-    // check for trigger keyword
     if (!text?.startsWith(TRIGGER_KEYWORD)) return;
 
-    // extract client name after the keyword
     const clientName = text.replace(TRIGGER_KEYWORD, '').trim();
 
     if (!clientName) {
@@ -39,16 +27,22 @@ export async function handleEvent(body) {
       return;
     }
 
+    // check if this user has authenticated
+    const userTokens = await getUserTokens(senderUserId);
+
+    if (!userTokens) {
+      // no token — ask them to authenticate
+      const authUrl = `${process.env.APP_BASE_URL}/oauth/start?userId=${senderUserId}`;
+      await sendDirectMessage(senderUserId, `👋 First time setup! Please authenticate here so I can create sheets on your behalf:\n${authUrl}\n\nAfter authenticating, try your command again.`);
+      return;
+    }
+
     console.log('Creating sheet for:', clientName);
 
-    // copy the template
-    const fileLink = await copyTemplate(clientName);
+    const fileLink = await copyTemplate(clientName, userTokens.access_token, senderUserId);
 
-    // send link to the DESIGNATED group chat
     await sendGroupMessage(DESIGNATED_CHAT_ID, `📋 New Supply Knowledge Sheet for *${clientName}*:\n${fileLink}`);
-
-    // also confirm back to whoever triggered it
-    await sendDirectMessage(senderUserId, `✅ Done! Sheet has been shared to the group.`);
+    await sendDirectMessage(senderUserId, `✅ Done! Sheet ready for *${clientName}*:\n${fileLink}`);
 
   } catch (error) {
     console.error('Bot error:', error.message);

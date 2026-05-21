@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import { handleEvent } from './bot.js';
 import { exchangeCodeForToken } from './lark.js';
+import { saveUserTokens } from './tokenStore.js';
 
 
 
@@ -10,30 +11,33 @@ app.use(express.json());
 
 // Step 1 — visit this URL in browser to start OAuth login
 app.get('/oauth/start', (req, res) => {
+  const { userId } = req.query;
+
   const params = new URLSearchParams({
     client_id: process.env.LARK_APP_ID,
     redirect_uri: `${process.env.APP_BASE_URL}/oauth/callback`,
     scope: 'drive:drive drive:file offline_access',
-    state: 'random_string_for_security',
+    state: userId || 'unknown', // pass userId through OAuth flow
   });
 
   const authUrl = `https://accounts.larksuite.com/open-apis/authen/v1/authorize?${params}`;
-  console.log('Redirecting to:', authUrl);
   res.redirect(authUrl);
 });
 
 // Step 2 — Lark redirects here after user approves
 app.get('/oauth/callback', async (req, res) => {
-  const { code } = req.query;
+  const { code, state } = req.query;
+
+  // state contains the userId who triggered the OAuth
+  const userId = state;
 
   try {
     const tokens = await exchangeCodeForToken(code);
+    await saveUserTokens(userId, tokens.access_token, tokens.refresh_token);
 
-    // show tokens in browser so you can copy them to .env
     res.send(`
-      <h2>Success! Copy these to your .env file:</h2>
-      <p><b>LARK_USER_ACCESS_TOKEN=</b>${tokens.access_token}</p>
-      <p><b>LARK_REFRESH_TOKEN=</b>${tokens.refresh_token}</p>
+      <h2>✅ Success!</h2>
+      <p>You're now authenticated. Go back to Lark and try your command again.</p>
     `);
   } catch (error) {
     res.send(`Error: ${error.message}`);
