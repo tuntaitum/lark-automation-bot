@@ -1,0 +1,39 @@
+import { refreshUserToken } from './auth.js';
+
+export async function copyTemplate(clientName, userAccessToken, userId) {
+  const date = new Date().toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
+  const newFileName = `Supply Knowledge Sheet — ${clientName} — ${date}`;
+
+  async function attemptCopy(token) {
+    const response = await fetch(`https://open.larksuite.com/open-apis/drive/explorer/v2/file/copy/files/${process.env.SNS_TEMPLATE_TOKEN}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dstName: newFileName,
+        dstFolderToken: process.env.SNS_FOLDER_TOKEN,
+        type: 'sheet',
+      }),
+    });
+    return await response.json();
+  }
+
+  let data = await attemptCopy(userAccessToken);
+
+  // if token expired, refresh and retry once
+  if (data.code === 99991677) {
+    console.log('Token expired — refreshing...');
+    const newToken = await refreshUserToken(userId);
+    data = await attemptCopy(newToken);
+  }
+
+  if (data.code !== 0) {
+    throw new Error(`Failed to copy template: ${data.msg}`);
+  }
+
+  return data.data?.url;
+}

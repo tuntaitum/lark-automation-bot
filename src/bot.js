@@ -1,4 +1,5 @@
-import { sendGroupMessage, sendDirectMessage, copyTemplate } from './lark.js';
+import { sendDirectMessage, sendGroupMessage } from './lark/messenger.js';
+import { copyTemplate } from './lark/drive.js';
 import { getUserTokens } from './tokenStore.js';
 
 const SNS_TRIGGER_KEYWORD = '!newSNsheet';

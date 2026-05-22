@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import { handleEvent } from './bot.js';
-import { exchangeCodeForToken } from './lark.js';
+import { exchangeCodeForToken } from './lark/auth.js';
 import { saveUserTokens } from './tokenStore.js';
 
 
