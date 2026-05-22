@@ -72,7 +72,6 @@ export async function sendDirectMessage(userId, message) {
   return data;
 }
 
-// Send a message to a group chat
 export async function sendGroupMessage(chatId, message) {
   const token = await getTenantAccessToken();
 
