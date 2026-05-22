@@ -72,7 +72,6 @@ export async function sendDirectMessage(userId, message) {
   return data;
 }
 
-// Send a message to a group chat
 export async function sendGroupMessage(chatId, message) {
   const token = await getTenantAccessToken();
 
@@ -93,7 +92,6 @@ export async function sendGroupMessage(chatId, message) {
   return data;
 }
 
-// Copy the template sheet and return the new file's URL
 export async function copyTemplate(clientName, userAccessToken, userId) {
   const date = new Date().toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric'
@@ -101,15 +99,15 @@ export async function copyTemplate(clientName, userAccessToken, userId) {
   const newFileName = `Supply Knowledge Sheet — ${clientName} — ${date}`;
 
   async function attemptCopy(token) {
-    const response = await fetch(`https://open.larksuite.com/open-apis/drive/explorer/v2/file/copy/files/${process.env.LARK_TEMPLATE_TOKEN}`, {
+    const response = await fetch(`https://open.larksuite.com/open-apis/drive/explorer/v2/file/copy/files/${process.env.SNS_TEMPLATE_TOKEN}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        name: newFileName,
-        dstFolderToken: process.env.LARK_FOLDER_TOKEN,
+        dstName: newFileName,
+        dstFolderToken: process.env.SNS_FOLDER_TOKEN,
         type: 'sheet',
       }),
     });

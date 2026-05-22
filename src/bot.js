@@ -1,8 +1,8 @@
 import { sendGroupMessage, sendDirectMessage, copyTemplate } from './lark.js';
 import { getUserTokens } from './tokenStore.js';
 
-const TRIGGER_KEYWORD = '!newSNsheet';
-const DESIGNATED_CHAT_ID = process.env.LARK_GROUP_CHAT_ID;
+const SNS_TRIGGER_KEYWORD = '!newSNsheet';
+const SNS_VEGGIEVOICE_CHAT_ID = process.env.SNS_GROUP_CHAT_ID;
 
 export async function handleEvent(body) {
   try {
@@ -18,9 +18,9 @@ export async function handleEvent(body) {
     const text = messageContent.text?.trim();
     const senderUserId = event.sender.sender_id.user_id;
 
-    if (!text?.startsWith(TRIGGER_KEYWORD)) return;
+    if (!text?.startsWith(SNS_TRIGGER_KEYWORD)) return;
 
-    const clientName = text.replace(TRIGGER_KEYWORD, '').trim();
+    const clientName = text.replace(SNS_TRIGGER_KEYWORD, '').trim();
 
     if (!clientName) {
       await sendDirectMessage(senderUserId, '⚠️ Please include a client name — e.g. !newSNsheet SeaTech');
@@ -41,7 +41,7 @@ export async function handleEvent(body) {
 
     const fileLink = await copyTemplate(clientName, userTokens.access_token, senderUserId);
 
-    await sendGroupMessage(DESIGNATED_CHAT_ID, `📋 New Supply Knowledge Sheet for *${clientName}*:\n${fileLink}`);
+    await sendGroupMessage(SNS_VEGGIEVOICE_CHAT_ID, `📋 New Supply Knowledge Sheet for *${clientName}*:\n${fileLink}`);
     await sendDirectMessage(senderUserId, `✅ Done! Sheet ready for *${clientName}*:\n${fileLink}`);
 
   } catch (error) {
