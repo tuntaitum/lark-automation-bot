@@ -1,3 +1,18 @@
+# dependencies
 node_modules/
+
+# environment variables
 .env
-tokens.json
+.env.local
+.env.development
+.env.production
+
+# macOS system files
+.DS_Store
+
+# logs
+*.log
+npm-debug.log*
+
+# editor files
+.vscode/

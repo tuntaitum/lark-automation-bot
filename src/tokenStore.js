@@ -1,38 +1,27 @@
-import { readFile, writeFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import Redis from 'ioredis';
 
-const TOKEN_FILE = './tokens.json';
+const redis = new Redis(process.env.REDIS_URL);
 
-// load all tokens from file
-async function loadTokens() {
-  if (!existsSync(TOKEN_FILE)) return {};
-  const raw = await readFile(TOKEN_FILE, 'utf-8');
+export async function getUserTokens(userId) {
   try {
-    return JSON.parse(raw);
-  } catch {
-    return {};
+    const tokens = await redis.get(`user:${userId}`);
+    return tokens ? JSON.parse(tokens) : null;
+  } catch (error) {
+    console.error('Failed to get user tokens:', error.message);
+    return null;
   }
 }
 
-// save all tokens to file
-async function saveTokens(tokens) {
-  await writeFile(TOKEN_FILE, JSON.stringify(tokens, null, 2));
-}
-
-// get a specific user's tokens
-export async function getUserTokens(userId) {
-  const tokens = await loadTokens();
-  return tokens[userId] || null;
-}
-
-// save a specific user's tokens
 export async function saveUserTokens(userId, accessToken, refreshToken) {
-  const tokens = await loadTokens();
-  tokens[userId] = {
-    access_token: accessToken,
-    refresh_token: refreshToken,
-    saved_at: new Date().toISOString(),
-  };
-  await saveTokens(tokens);
-  console.log(`Tokens saved for user: ${userId}`);
+  try {
+    await redis.set(`user:${userId}`, JSON.stringify({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      saved_at: new Date().toISOString(),
+    }));
+    console.log(`Tokens saved for user: ${userId}`);
+  } catch (error) {
+    console.error('Failed to save user tokens:', error.message);
+    throw error;
+  }
 }
