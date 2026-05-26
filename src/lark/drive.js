@@ -1,6 +1,10 @@
 import { refreshUserToken } from './auth.js';
 
 export async function copyTemplate(clientName, userAccessToken, userId) {
+  console.log('copyTemplate called for:', clientName);
+  console.log('userId:', userId);
+  console.log('userAccessToken exists:', !!userAccessToken);
+  
   const date = new Date().toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric'
   });
@@ -23,6 +27,7 @@ export async function copyTemplate(clientName, userAccessToken, userId) {
   }
 
   let data = await attemptCopy(userAccessToken);
+  console.log('Copy response:', JSON.stringify(data, null, 2));
 
   // if token expired, refresh and retry once
   if (data.code === 99991677) {
