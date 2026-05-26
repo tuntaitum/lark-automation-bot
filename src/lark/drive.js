@@ -11,20 +11,20 @@ export async function copyTemplate(clientName, userAccessToken, userId) {
   const newFileName = `Supply Knowledge Sheet — ${clientName} — ${date}`;
 
   async function attemptCopy(token) {
-    const response = await fetch(`https://open.larksuite.com/open-apis/drive/explorer/v2/file/copy/files/${process.env.SNS_TEMPLATE_TOKEN}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        dstName: newFileName,
-        dstFolderToken: process.env.SNS_FOLDER_TOKEN,
-        type: 'sheet',
-      }),
-    });
-    return await response.json();
-  }
+  const response = await fetch(`https://open.larksuite.com/open-apis/drive/v1/files/${process.env.SNS_TEMPLATE_TOKEN}/copy`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name: newFileName,
+      folder_token: process.env.SNS_FOLDER_TOKEN, // note: underscore not camelCase for this endpoint
+      type: 'sheet',
+    }),
+  });
+  return await response.json();
+}
 
   let data = await attemptCopy(userAccessToken);
   console.log('Copy response:', JSON.stringify(data, null, 2));
