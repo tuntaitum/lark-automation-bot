@@ -1,38 +1,42 @@
-import { refreshUserToken } from './auth.js';
+import { getUserTokens, refreshUserToken } from './auth.js';
+
+const BOT_OWNER_ID = process.env.BOT_OWNER_ID; // your user ID
 
 export async function copyTemplate(clientName, userAccessToken, userId) {
-  console.log('copyTemplate called for:', clientName);
-  console.log('userId:', userId);
-  console.log('userAccessToken exists:', !!userAccessToken);
-  
   const date = new Date().toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric'
   });
   const newFileName = `Supply Knowledge Sheet — ${clientName} — ${date}`;
 
+  // always use bot owner token for copying
+  const ownerTokens = await getUserTokens(BOT_OWNER_ID);
+  const copyToken = ownerTokens?.access_token;
+
+  if (!copyToken) {
+    throw new Error('Bot owner token not found — please authenticate at /oauth/start');
+  }
+
   async function attemptCopy(token) {
-  const response = await fetch(`https://open.larksuite.com/open-apis/drive/v1/files/${process.env.SNS_TEMPLATE_TOKEN}/copy`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      name: newFileName,
-      folder_token: process.env.SNS_FOLDER_TOKEN, // note: underscore not camelCase for this endpoint
-      type: 'sheet',
-    }),
-  });
-  return await response.json();
-}
+    const response = await fetch(`https://open.larksuite.com/open-apis/drive/explorer/v2/file/copy/files/${process.env.SNS_TEMPLATE_TOKEN}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        dstName: newFileName,
+        dstFolderToken: process.env.SNS_FOLDER_TOKEN,
+        type: 'sheet',
+      }),
+    });
+    return await response.json();
+  }
 
-  let data = await attemptCopy(userAccessToken);
-  console.log('Copy response:', JSON.stringify(data, null, 2));
+  let data = await attemptCopy(copyToken);
 
-  // if token expired, refresh and retry once
   if (data.code === 99991677) {
-    console.log('Token expired — refreshing...');
-    const newToken = await refreshUserToken(userId);
+    console.log('Owner token expired — refreshing...');
+    const newToken = await refreshUserToken(BOT_OWNER_ID);
     data = await attemptCopy(newToken);
   }
 
