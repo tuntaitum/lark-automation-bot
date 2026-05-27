@@ -53,7 +53,7 @@ export async function sendGroupMessage(chatId, message) {
 export async function createGroupChat(clientName, memberUserIds = []) {
   const token = await getTenantAccessToken();
 
-  const response = await fetch('https://open.larksuite.com/open-apis/im/v1/chats?set_bot_manager=true?user_id_type=user_id', {
+  const response = await fetch('https://open.larksuite.com/open-apis/im/v1/chats?set_bot_manager=true&user_id_type=user_id', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
