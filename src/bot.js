@@ -1,9 +1,12 @@
-import { sendDirectMessage, sendGroupMessage } from './lark/messenger.js';
+import { sendDirectMessage, sendGroupMessage, createGroupChat } from './lark/messenger.js';
 import { copyTemplate } from './lark/drive.js';
 import { getUserTokens } from './tokenStore.js';
 
 const SNS_TRIGGER_KEYWORD = '!newSNsheet';
-const SNS_VEGGIEVOICE_CHAT_ID = process.env.SNS_GROUP_CHAT_ID;
+const DEFAULT_MEMBER_IDS = process.env.DEFAULT_MEMBER_IDS
+  ? process.env.DEFAULT_MEMBER_IDS.split(',')
+  : [];
+console.log(DEFAULT_MEMBER_IDS.toString)
 
 export async function handleEvent(body) {
   try {
@@ -40,10 +43,21 @@ export async function handleEvent(body) {
 
     console.log('Creating sheet for:', clientName);
 
-    const fileLink = await copyTemplate(clientName, userTokens.access_token, senderUserId);
+   // include the triggering user in the group chat
+    const members = [...new Set([...DEFAULT_MEMBER_IDS, senderUserId])];
 
-    await sendGroupMessage(SNS_VEGGIEVOICE_CHAT_ID, `📋 New Supply Knowledge Sheet for *${clientName}*:\n${fileLink}`);
-    await sendDirectMessage(senderUserId, `✅ Done! Sheet ready for *${clientName}*:\n${fileLink}`);
+    // run sheet copy and group creation in parallel
+    const [fileLink, chatId] = await Promise.all([
+      copyTemplate(clientName, userTokens.access_token, senderUserId),
+      createGroupChat(clientName, members),
+    ]);
+
+    // send sheet link to the newly created group chat
+    await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet for *${clientName}*:\n${fileLink}`);
+
+    // confirm to the person who triggered it
+    await sendDirectMessage(senderUserId, `✅ Done! Group chat and sheet created for *${clientName}*:\n${fileLink}`);
+
 
   } catch (error) {
     console.error('Bot error:', error.message);
