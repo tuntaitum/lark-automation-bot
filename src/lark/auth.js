@@ -64,6 +64,7 @@ export async function refreshUserToken(userId) {
   });
 
   const data = await response.json();
+  console.log('Refresh token raw response:', JSON.stringify(data, null, 2)); // add this
 
   if (data.code !== 0) {
     throw new Error(`Token refresh failed: ${data.msg}`);
