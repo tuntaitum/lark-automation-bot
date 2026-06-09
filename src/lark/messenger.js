@@ -88,7 +88,7 @@ export async function sendGroupMention(chatId, userId, message) {
     body: JSON.stringify({
       receive_id: chatId,
       msg_type: 'text',
-      content: JSON.stringify({ text: `<at id="${userId}"></at> ${message}` }),
+      content: JSON.stringify({ text: `<at user_id="${userId}"></at> ${message}` }),
     }),
   });
 
