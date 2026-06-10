@@ -33,6 +33,11 @@ export async function handleEvent(body) {
     if (!event?.message) return;
     if (event.sender.sender_type === 'app') return;
 
+    // in group chats, only process messages that start with /
+    if (event.message.chat_type === 'group' && !text?.startsWith('/')) {
+      return;
+    }
+
     const messageContent = JSON.parse(event.message.content);
     const text = messageContent.text?.trim();
     const senderUserId = event.sender.sender_id.user_id;
@@ -53,11 +58,15 @@ export async function handleEvent(body) {
         'Creates a Veggie Solution group chat and Supply Knowledge Sheet.',
         'Example: `/Veggie Cogistics`',
         '',
-        '📋 **@Lao Gong /SNsheet** (in group chat)',
+        '📋 **/SNsheet** (in group chat)',
         'Creates a Supply Knowledge Sheet using the group name as client name.',
         '',
-        '📝 **@Lao Gong /CSN** (in group chat)',
+        '📝 **/CSN** (in group chat)',
         'Tags CEO to create a CSN sheet for the client.',
+        '',
+        '✏️ */rename [ClientName]* (in group chat)',
+        'Renames the group chat while preserving the suffix (3PL or Veggie Solution).',
+        'Example: `/rename Cogistics`',
         '',
         '❓ **/help**',
         'Shows this list of commands.',
@@ -156,9 +165,9 @@ export async function handleEvent(body) {
       return;
     }
 
-    // Greeting keywords in Bot's DM - triggers a response and sends the !help list
+    // Greeting keywords in Bot's DM - triggers a response and sends the /help list
     if (GREETINGS_TRIGGER_KEYWORD.includes(text?.toLowerCase())) {
-      const greetingReturnMessage = `👋 Hello, <at user_id="${senderUserId}"></at>. Type !help to see what I can do [Delighted]`;
+      const greetingReturnMessage = `👋 Hello, <at user_id="${senderUserId}"></at>. Type /help to see what I can do [Delighted]`;
       await sendDirectMessage(senderUserId, greetingReturnMessage);
       return;
     }
