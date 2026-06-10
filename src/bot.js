@@ -165,9 +165,9 @@ export async function handleEvent(body) {
       return;
     }
 
-    // Greeting keywords in Bot's DM - triggers a response and sends the !help list
+    // Greeting keywords in Bot's DM - triggers a response and sends the /help list
     if (GREETINGS_TRIGGER_KEYWORD.includes(text?.toLowerCase())) {
-      const greetingReturnMessage = `👋 Hello, <at user_id="${senderUserId}"></at>. Type !help to see what I can do [Delighted]`;
+      const greetingReturnMessage = `👋 Hello, <at user_id="${senderUserId}"></at>. Type /help to see what I can do [Delighted]`;
       await sendDirectMessage(senderUserId, greetingReturnMessage);
       return;
     }
