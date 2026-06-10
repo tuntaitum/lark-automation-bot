@@ -23,9 +23,10 @@ function extractFieldValue(field) {
 }
 
 function formatTimestamp(timestamp) {
-  if (!timestamp) return '-';
-  // Lark timestamps are in milliseconds
-  return new Date(timestamp).toLocaleDateString('en-GB', {
+  if (!timestamp || timestamp === '-') return 'N/A';
+  const date = new Date(Number(timestamp));
+  if (isNaN(date.getTime())) return 'N/A';
+  return date.toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric'
   });
 }
@@ -86,23 +87,39 @@ export async function getClientStory(clientName) {
     fetchTableRecords(STORY_TABLE_ID, clientName),
   ]);
 
+  console.log('Raw task fields sample:', JSON.stringify(taskRecords[0]?.fields, null, 2));
+  console.log('Raw story fields sample:', JSON.stringify(storyRecords[0]?.fields, null, 2));
+
   return { taskRecords, storyRecords };
 }
 
 export function formatStoryMessage(clientName, taskRecords, storyRecords) {
   const lines = [];
 
+  // filter out placeholder records where Tasks field is empty
+  const realTaskRecords = taskRecords.filter(record => {
+    const task = extractFieldValue(record.fields['Tasks']);
+    return task && task !== '-';
+  });
+
+  // filter out placeholder records where Content field is empty
+  const realStoryRecords = storyRecords.filter(record => {
+    const content = extractFieldValue(record.fields['Content']);
+    return content && content !== '-';
+  });
+
+  // tasks
   lines.push(`📋 *Tasks — ${clientName}*`);
   lines.push('─────────────────');
 
-  if (taskRecords.length === 0) {
-    lines.push('No tasks found.');
+  if (realTaskRecords.length === 0) {
+    lines.push('N/A');
   } else {
     const grouped = {};
 
-    for (const record of taskRecords) {
+    for (const record of realTaskRecords) {
       const fields = record.fields;
-      const voiceDate = formatTimestamp(extractFieldValue(fields['Product Voice Date: Date']));
+      const voiceDate = extractFieldValue(fields['Product Voice Date: Date']);
       const task = extractFieldValue(fields['Tasks']);
       const status = extractFieldValue(fields['Status']);
       const assignedDate = formatTimestamp(extractFieldValue(fields['Assigned Date']));
@@ -112,20 +129,21 @@ export function formatStoryMessage(clientName, taskRecords, storyRecords) {
     }
 
     for (const [voiceDate, tasks] of Object.entries(grouped)) {
-      lines.push(`\n🗓 *Voice: ${voiceDate}*`);
+      lines.push(`\n🗓 *${voiceDate}*`);
       for (const t of tasks) {
         lines.push(`• ${t.task} | ${t.status} | ${t.assignedDate}`);
       }
     }
   }
 
+  // story
   lines.push(`\n📖 *Story — ${clientName}*`);
   lines.push('─────────────────');
 
-  if (storyRecords.length === 0) {
-    lines.push('No story records found.');
+  if (realStoryRecords.length === 0) {
+    lines.push('N/A');
   } else {
-    for (const record of storyRecords) {
+    for (const record of realStoryRecords) {
       const fields = record.fields;
       const content = extractFieldValue(fields['Content']);
       const date = formatTimestamp(extractFieldValue(fields['Date']));
