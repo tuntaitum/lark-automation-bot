@@ -8,6 +8,7 @@ const HELP_KEYWORD = '/help';
 const CSN_TRIGGER_KEYWORD = '/CSN';
 const SNSHEET_TRIGGER_KEYWORD = '/SNsheet';
 const GREETINGS_TRIGGER_KEYWORD = ['hello', 'hi', 'hey', 'หวัดดี', 'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'Ni hao', '你好', '您好'];
+const VOICEFORM_TRIGGER_KEYWORD = '/voiceform';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -38,7 +39,7 @@ export async function handleEvent(body) {
     console.log('Message received:', text);
     console.log('From user:', senderUserId);
 
-    // !help
+    // /help
     if (text === HELP_KEYWORD) {
       const helpMessage = [
         '🤖 **Available Commands**',
@@ -65,12 +66,12 @@ export async function handleEvent(body) {
       return;
     }
 
-    // !3PL
+    // /3PL
     if (text?.startsWith(TPL_TRIGGER_KEYWORD)) {
       const clientName = text.replace(TPL_TRIGGER_KEYWORD, '').trim();
 
       if (!clientName) {
-        await sendDirectMessage(senderUserId, '⚠️ Please include a client name — e.g. !3PL Cogistics');
+        await sendDirectMessage(senderUserId, '⚠️ Please include a client name — e.g. /3PL Cogistics');
         return;
       }
 
@@ -82,12 +83,12 @@ export async function handleEvent(body) {
       return;
     }
 
-    // !Veggie
+    // /Veggie
     if (text?.startsWith(VEGGIE_TRIGGER_KEYWORD)) {
       const clientName = text.replace(VEGGIE_TRIGGER_KEYWORD, '').trim();
 
       if (!clientName) {
-        await sendDirectMessage(senderUserId, '⚠️ Please include a client name — e.g. !Veggie Cogistics');
+        await sendDirectMessage(senderUserId, '⚠️ Please include a client name — e.g. /Veggie Cogistics');
         return;
       }
 
@@ -105,14 +106,14 @@ export async function handleEvent(body) {
       return;
     }
 
-    // !CSN — tag CEO to make CSN sheet (only works in group chats)
+    // /CSN — tag CEO to make CSN sheet (only works in group chats)
     if (event.message.chat_type === 'group' && text?.includes(CSN_TRIGGER_KEYWORD)) {
       const chatId = event.message.chat_id;
       await sendGroupMention(chatId, CEO_USER_ID, `Please create a CSN sheet for this client krub 🙏`);
       return;
     }
 
-    // !SNsheet — create Supply Knowledge Sheet from group name (group chat only)
+    // /SNsheet — create Supply Knowledge Sheet from group name (group chat only)
     if (event.message.chat_type === 'group' && text?.includes(SNSHEET_TRIGGER_KEYWORD)) {
       const chatId = event.message.chat_id;
 
@@ -137,8 +138,14 @@ export async function handleEvent(body) {
       return;
     }
 
+    // /voiceform - sends user the client voice form link
+    if (text === VOICEFORM_TRIGGER_KEYWORD) {
+      await sendDirectMessage(senderUserId, `แบบสอบถามความต้องการเบื้องต้น Cogistics: [https://forms.gle/bTvJfixHg46EvpTC9](https://forms.gle/bTvJfixHg46EvpTC9)`);
+      return;
+    }
+
     // unrecognized command
-    await sendDirectMessage(senderUserId, `❓ Unknown command. Type *!help* to see available commands.`);
+    await sendDirectMessage(senderUserId, `❓ Unknown command. Type */help* to see available commands.`);
 
   } catch (error) {
     console.error('Bot error:', error.message);
