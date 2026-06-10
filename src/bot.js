@@ -2,11 +2,11 @@ import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat,
 import { copyTemplate } from './lark/drive.js';
 import { getUserTokens } from './tokenStore.js';
 
-const TPL_TRIGGER_KEYWORD = '!3PL';
-const VEGGIE_TRIGGER_KEYWORD = '!Veggie';
-const HELP_KEYWORD = '!help';
-const CSN_TRIGGER_KEYWORD = '!CSN';
-const SNSHEET_TRIGGER_KEYWORD = '!SNsheet';
+const TPL_TRIGGER_KEYWORD = '/3PL';
+const VEGGIE_TRIGGER_KEYWORD = '/Veggie';
+const HELP_KEYWORD = '/help';
+const CSN_TRIGGER_KEYWORD = '/CSN';
+const SNSHEET_TRIGGER_KEYWORD = '/SNsheet';
 const GREETINGS_TRIGGER_KEYWORD = ['hello', 'hi', 'hey', 'หวัดดี', 'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'Ni hao', '你好', '您好'];
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
@@ -43,21 +43,21 @@ export async function handleEvent(body) {
       const helpMessage = [
         '🤖 **Available Commands**',
         '',
-        '🚛 **!3PL [ClientName]**',
+        '🚛 **/3PL [ClientName]**',
         'Creates a 3PL group chat.',
-        'Example: `!3PL Cogistics`',
+        'Example: `/3PL Cogistics`',
         '',
-        '🥦 **!Veggie [ClientName]**',
+        '🥦 **/Veggie [ClientName]**',
         'Creates a Veggie Solution group chat and Supply Knowledge Sheet.',
-        'Example: `!Veggie Cogistics`',
+        'Example: `/Veggie Cogistics`',
         '',
-        '📋 **@Lao Gong !SNsheet** (in group chat)',
+        '📋 **@Lao Gong /SNsheet** (in group chat)',
         'Creates a Supply Knowledge Sheet using the group name as client name.',
         '',
-        '📝 **@Lao Gong !CSN** (in group chat)',
+        '📝 **@Lao Gong /CSN** (in group chat)',
         'Tags CEO to create a CSN sheet for the client.',
         '',
-        '❓ **!help**',
+        '❓ **/help**',
         'Shows this list of commands.',
       ].join('\n');
 
