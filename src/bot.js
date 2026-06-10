@@ -33,14 +33,14 @@ export async function handleEvent(body) {
     if (!event?.message) return;
     if (event.sender.sender_type === 'app') return;
 
+    const messageContent = JSON.parse(event.message.content);
+    const text = messageContent.text?.trim();
+    const senderUserId = event.sender.sender_id.user_id;
+
     // in group chats, only process messages that start with /
     if (event.message.chat_type === 'group' && !text?.startsWith('/')) {
       return;
     }
-
-    const messageContent = JSON.parse(event.message.content);
-    const text = messageContent.text?.trim();
-    const senderUserId = event.sender.sender_id.user_id;
 
     console.log('Message received:', text);
     console.log('From user:', senderUserId);
@@ -64,7 +64,7 @@ export async function handleEvent(body) {
         '📝 **/CSN** (in group chat)',
         'Tags CEO to create a CSN sheet for the client.',
         '',
-        '✏️ */rename [ClientName]* (in group chat)',
+        '✏️ **/rename [ClientName]** (in group chat)',
         'Renames the group chat while preserving the suffix (3PL or Veggie Solution).',
         'Example: `/rename Cogistics`',
         '',
