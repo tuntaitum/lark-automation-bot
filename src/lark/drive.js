@@ -9,14 +9,6 @@ export async function copyTemplate(clientName) {
   });
   const newFileName = `Supply Knowledge Sheet — ${clientName} — ${date}`;
 
-  // always use bot owner token for copying
-  const ownerTokens = await getUserTokens(BOT_OWNER_ID);
-  const copyToken = ownerTokens?.access_token;
-
-  if (!copyToken) {
-    throw new Error('Bot owner token not found — please authenticate at /oauth/start');
-  }
-
   async function attemptCopy(token) {
     const response = await fetch(`https://open.larksuite.com/open-apis/drive/explorer/v2/file/copy/files/${process.env.SNS_TEMPLATE_TOKEN}`, {
       method: 'POST',
