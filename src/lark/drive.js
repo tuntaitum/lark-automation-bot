@@ -5,7 +5,7 @@ const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 
 export async function copyTemplate(clientName) {
   const date = new Date().toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'short', year: 'numeric'
+    day: undefined, month: 'short', year: 'numeric'
   });
   const newFileName = `Supply Knowledge Sheet — ${clientName} — ${date}`;
 

@@ -7,6 +7,7 @@ const VEGGIE_TRIGGER_KEYWORD = '!Veggie';
 const HELP_KEYWORD = '!help';
 const CSN_TRIGGER_KEYWORD = '!CSN';
 const SNSHEET_TRIGGER_KEYWORD = '!SNsheet';
+const GREETINGS_TRIGGER_KEYWORD = ['hello', 'hi', 'hey', 'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'Ni hao', '你好'];
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -126,6 +127,13 @@ export async function handleEvent(body) {
       const fileLink = await copyTemplate(clientName);
 
       await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
+      return;
+    }
+
+    // Greeting keywords in Bot's DM - triggers a response and sends the !help list
+    if (GREETINGS_TRIGGER_KEYWORD.includes(text?.toLowerCase())) {
+      const greetingReturnMessage = `👋 Hello, <at user_id="${senderUserId}"></at>. Type !help to see what I can do [Delighted]`;
+      await sendDirectMessage(senderUserId, greetingReturnMessage);
       return;
     }
 
