@@ -57,6 +57,10 @@ app.post('/webhook', async (req, res) => {
   await handleEvent(body);
 });
 
+app.get('/ping', (req, res) => {
+  res.json({ status: 'alive' });
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
