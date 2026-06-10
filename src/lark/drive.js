@@ -1,6 +1,9 @@
 import { refreshUserToken } from './auth.js';
+import { getUserTokens } from '../tokenStore.js';
 
-export async function copyTemplate(clientName, userAccessToken, userId) {
+const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
+
+export async function copyTemplate(clientName) {
   const date = new Date().toLocaleDateString('en-GB', {
     day: 'numeric', month: 'short', year: 'numeric'
   });
@@ -22,12 +25,17 @@ export async function copyTemplate(clientName, userAccessToken, userId) {
     return await response.json();
   }
 
-  let data = await attemptCopy(userAccessToken);
+  // always use bot owner token
+  const ownerTokens = await getUserTokens(BOT_OWNER_ID);
+  if (!ownerTokens?.access_token) {
+    throw new Error('Bot owner token not found — please authenticate at /oauth/start');
+  }
 
-  // if token expired, refresh and retry once
+  let data = await attemptCopy(ownerTokens.access_token);
+
   if (data.code === 99991677) {
-    console.log('Token expired — refreshing...');
-    const newToken = await refreshUserToken(userId);
+    console.log('Owner token expired — refreshing...');
+    const newToken = await refreshUserToken(BOT_OWNER_ID);
     data = await attemptCopy(newToken);
   }
 

@@ -101,3 +101,23 @@ export async function sendGroupMention(chatId, userId, message) {
 
   return data;
 }
+
+export async function getGroupInfo(chatId) {
+  const token = await getTenantAccessToken();
+
+  const response = await fetch(`https://open.larksuite.com/open-apis/im/v1/chats/${chatId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await response.json();
+
+  if (data.code !== 0) {
+    throw new Error(`Failed to get group info: ${data.msg}`);
+  }
+
+  return data.data;
+}

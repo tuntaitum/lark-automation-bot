@@ -1,11 +1,12 @@
-import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat } from './lark/messenger.js';
+import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo } from './lark/messenger.js';
 import { copyTemplate } from './lark/drive.js';
 import { getUserTokens } from './tokenStore.js';
 
 const TPL_TRIGGER_KEYWORD = '!3PL';
 const VEGGIE_TRIGGER_KEYWORD = '!Veggie';
 const HELP_KEYWORD = '!help';
-const CSN_TRIGGER_KEYWORD = '!CSN'
+const CSN_TRIGGER_KEYWORD = '!CSN';
+const SNSHEET_TRIGGER_KEYWORD = '!SNsheet';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -49,6 +50,9 @@ export async function handleEvent(body) {
         'Creates a Veggie Solution group chat and Supply Knowledge Sheet.',
         'Example: `!Veggie Cogistics`',
         '',
+        '📋 **@Lao Gong !SNsheet** (in group chat)',
+        'Creates a Supply Knowledge Sheet using the group name as client name.',
+        '',
         '📝 **@Lao Gong !CSN** (in group chat)',
         'Tags CEO to create a CSN sheet for the client.',
         '',
@@ -86,31 +90,42 @@ export async function handleEvent(body) {
         return;
       }
 
-      const userTokens = await getUserTokens(senderUserId);
-      if (!userTokens) {
-        const authUrl = `${process.env.APP_BASE_URL}/oauth/start?userId=${senderUserId}`;
-        await sendDirectMessage(senderUserId, `👋 First time setup! Please authenticate here:\n${authUrl}\n\nThen try again.`);
-        return;
-      }
-
       const members = [...new Set([...DEFAULT_VEGGIES_MEMBER_IDS, senderUserId, CEO_USER_ID])];
 
       // run in parallel
       const [fileLink, chatId] = await Promise.all([
-        copyTemplate(clientName, userTokens.access_token, senderUserId),
+        copyTemplate(clientName),
         createGroupChat(`${clientName} - Veggie Solution`, members),
       ]);
 
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: Veggie Solution. `);
-      await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet for *${clientName}*:\n${fileLink}`);
-      await sendDirectMessage(senderUserId, `✅ Done! Veggie Solution group and sheet created for *${clientName}*.`);
+      await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
+      await sendDirectMessage(senderUserId, `✅ Done! Veggie Solution group and Supply Knowledge sheet created for *${clientName}*.`);
       return;
     }
 
     // !CSN — tag CEO to make CSN sheet (only works in group chats)
     if (event.message.chat_type === 'group' && text?.includes(CSN_TRIGGER_KEYWORD)) {
       const chatId = event.message.chat_id;
-      await sendGroupMention(chatId, CEO_USER_ID, `please create a CSN sheet for this client krub 🙏`);
+      await sendGroupMention(chatId, CEO_USER_ID, `Please create a CSN sheet for this client krub 🙏`);
+      return;
+    }
+
+    // !SNsheet — create Supply Knowledge Sheet from group name (group chat only)
+    if (event.message.chat_type === 'group' && text?.includes(SNSHEET_TRIGGER_KEYWORD)) {
+      const chatId = event.message.chat_id;
+
+      // get group name and extract client name
+      const groupInfo = await getGroupInfo(chatId);
+      const groupName = groupInfo.name;
+      const clientName = groupName.split(' - ')[0].trim();
+
+      console.log('Group name:', groupName);
+      console.log('Extracted client name:', clientName);
+
+      const fileLink = await copyTemplate(clientName);
+
+      await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
       return;
     }
 
