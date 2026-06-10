@@ -6,6 +6,30 @@ const BASE_APP_TOKEN = process.env.STORY_BASE_APP_TOKEN;
 const TASK_TABLE_ID = process.env.STORY_TASK_TABLE_ID;
 const STORY_TABLE_ID = process.env.STORY_TABLE_ID;
 
+function extractFieldValue(field) {
+  if (!field) return '-';
+  
+  // array of text objects e.g. [{ text: "value" }]
+  if (Array.isArray(field)) {
+    return field.map(f => f.text || f.value || f).join(', ');
+  }
+  
+  // single object e.g. { value: "value" }
+  if (typeof field === 'object') {
+    return field.value || field.text || JSON.stringify(field);
+  }
+  
+  return String(field);
+}
+
+function formatTimestamp(timestamp) {
+  if (!timestamp) return '-';
+  // Lark timestamps are in milliseconds
+  return new Date(timestamp).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
+}
+
 async function getBaseToken() {
   // try tenant token first
   try {
@@ -68,7 +92,6 @@ export async function getClientStory(clientName) {
 export function formatStoryMessage(clientName, taskRecords, storyRecords) {
   const lines = [];
 
-  // tasks
   lines.push(`📋 *Tasks — ${clientName}*`);
   lines.push('─────────────────');
 
@@ -79,10 +102,10 @@ export function formatStoryMessage(clientName, taskRecords, storyRecords) {
 
     for (const record of taskRecords) {
       const fields = record.fields;
-      const voiceDate = fields['Product Voice Date: Date'] || 'No Date';
-      const task = fields['Tasks'] || '-';
-      const status = fields['Status'] || '-';
-      const assignedDate = fields['Assigned Date'] || '-';
+      const voiceDate = formatTimestamp(extractFieldValue(fields['Product Voice Date: Date']));
+      const task = extractFieldValue(fields['Tasks']);
+      const status = extractFieldValue(fields['Status']);
+      const assignedDate = formatTimestamp(extractFieldValue(fields['Assigned Date']));
 
       if (!grouped[voiceDate]) grouped[voiceDate] = [];
       grouped[voiceDate].push({ task, status, assignedDate });
@@ -96,7 +119,6 @@ export function formatStoryMessage(clientName, taskRecords, storyRecords) {
     }
   }
 
-  // story
   lines.push(`\n📖 *Story — ${clientName}*`);
   lines.push('─────────────────');
 
@@ -105,8 +127,8 @@ export function formatStoryMessage(clientName, taskRecords, storyRecords) {
   } else {
     for (const record of storyRecords) {
       const fields = record.fields;
-      const content = fields['Content'] || '-';
-      const date = fields['Date'] || '-';
+      const content = extractFieldValue(fields['Content']);
+      const date = formatTimestamp(extractFieldValue(fields['Date']));
       lines.push(`• ${content} — ${date}`);
     }
   }
