@@ -1,6 +1,7 @@
 import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage } from './lark/messenger.js';
 import { copyTemplate } from './lark/drive.js';
 import { getUserTokens } from './tokenStore.js';
+import { getClientStory, formatStoryMessage } from './lark/base.js';
 
 const TPL_TRIGGER_KEYWORD = '/3PL';
 const VEGGIE_TRIGGER_KEYWORD = '/Veggie';
@@ -10,6 +11,7 @@ const SNSHEET_TRIGGER_KEYWORD = '/SNsheet';
 const GREETINGS_TRIGGER_KEYWORD = ['hello', 'hi', 'hey', 'หวัดดี', 'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'Ni hao', '你好', '您好'];
 const VOICEFORM_TRIGGER_KEYWORD = '/voiceform';
 const RENAME_TRIGGER_KEYWORD = '/rename';
+const STORY_TRIGGER_KEYWORD = '/story';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -66,6 +68,10 @@ export async function handleEvent(body) {
         '',
         '📝 **/CSN** (in group chat)',
         'Tags CEO to create a CSN sheet for the client.',
+        '',
+        '📊 **/story [ClientName]** or **/story** (in group chat)',
+        'Pulls tasks and story from the database for a client.',
+        'Example: `/story Cogistics` or just `/story` in a client group',
         '',
         '✏️ **/rename [ClientName]** (in group chat)',
         'Renames the group chat while preserving the suffix (3PL or Veggie Solution).',
@@ -167,6 +173,35 @@ export async function handleEvent(body) {
 
       await renameGroupChat(event.message.chat_id, newName);
       await sendGroupMessage(event.message.chat_id, `✅ Group renamed to *${newName}*`);
+      return;
+    }
+
+    // /story [clientName] or /story alone in group chat
+    if (text?.startsWith(STORY_TRIGGER_KEYWORD)) {
+      let clientName = text.replace(STORY_TRIGGER_KEYWORD, '').trim();
+
+      // if no client name, use group chat name
+      if (!clientName && event.message.chat_type === 'group') {
+        const groupInfo = await getGroupInfo(event.message.chat_id);
+        clientName = groupInfo.name.split(' - ')[0].trim();
+        console.log('Using group name as client:', clientName);
+      }
+
+      if (!clientName) {
+        await sendDirectMessage(senderUserId, '⚠️ Please include a client name — e.g. /story SeaTech');
+        return;
+      }
+
+      console.log('Fetching story for:', clientName);
+
+      const { taskRecords, storyRecords } = await getClientStory(clientName);
+      const message = formatStoryMessage(clientName, taskRecords, storyRecords);
+
+      if (event.message.chat_type === 'p2p') {
+        await sendDirectMessage(senderUserId, message);
+      } else {
+        await sendGroupMessage(event.message.chat_id, message);
+      }
       return;
     }
 
