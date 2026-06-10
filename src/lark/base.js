@@ -33,7 +33,7 @@ async function fetchTableRecords(tableId, clientName) {
     },
     body: JSON.stringify({
       filter: {
-        conjunction: 'AND',
+        conjunction: 'and',
         conditions: [
           {
             field_name: 'Client',
