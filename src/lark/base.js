@@ -1,5 +1,5 @@
-import { getTenantAccessToken } from './auth.js';
-import { getUserTokens, refreshUserToken } from './auth.js';
+import { getTenantAccessToken, refreshUserToken } from './auth.js';
+import { getUserTokens } from '../tokenStore.js';
 
 const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 const BASE_APP_TOKEN = process.env.STORY_BASE_APP_TOKEN;
