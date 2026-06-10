@@ -140,7 +140,7 @@ export async function handleEvent(body) {
 
     // /voiceform - sends user the client voice form link
     if (text === VOICEFORM_TRIGGER_KEYWORD) {
-      await sendDirectMessage(senderUserId, `[แบบสอบถามความต้องการเบื้องต้น Cogistics](https://forms.gle/bTvJfixHg46EvpTC9)`);
+      await sendDirectMessage(senderUserId, `แบบสอบถามความต้องการเบื้องต้น Cogistics: [https://forms.gle/bTvJfixHg46EvpTC9](https://forms.gle/bTvJfixHg46EvpTC9)`);
       return;
     }
 
