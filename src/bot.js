@@ -37,6 +37,9 @@ export async function handleEvent(body) {
     const text = messageContent.text?.trim();
     const senderUserId = event.sender.sender_id.user_id;
 
+    console.log('Chat type:', event.message.chat_type);
+    console.log('Text:', text);
+
     // in group chats, only process messages that start with /
     if (event.message.chat_type === 'group' && !text?.startsWith('/')) {
       return;
