@@ -7,7 +7,7 @@ const VEGGIE_TRIGGER_KEYWORD = '!Veggie';
 const HELP_KEYWORD = '!help';
 const CSN_TRIGGER_KEYWORD = '!CSN';
 const SNSHEET_TRIGGER_KEYWORD = '!SNsheet';
-const GREETINGS_TRIGGER_KEYWORD = ['hello', 'hi', 'hey', 'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'Ni hao', '你好'];
+const GREETINGS_TRIGGER_KEYWORD = ['hello', 'hi', 'hey', 'หวัดดี', 'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'Ni hao', '你好', '您好'];
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
