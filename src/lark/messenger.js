@@ -47,7 +47,7 @@ export async function sendGroupMessage(chatId, message) {
     throw new Error(`Failed to send group message: ${data.msg}`);
   }
 
-  return data;
+  return data.data?.message_id;
 }
 
 export async function createGroupChat(chatName, memberUserIds = []) {
@@ -139,6 +139,28 @@ export async function renameGroupChat(chatId, newName) {
 
   if (data.code !== 0) {
     throw new Error(`Failed to rename group: ${data.msg}`);
+  }
+
+  return data;
+}
+
+export async function pinMessage(messageId) {
+  const token = await getTenantAccessToken();
+
+  const response = await fetch('https://open.larksuite.com/open-apis/im/v1/pins', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ message_id: messageId }),
+  });
+
+  const data = await response.json();
+  console.log('Pin message response:', JSON.stringify(data, null, 2));
+
+  if (data.code !== 0) {
+    throw new Error(`Failed to pin message: ${data.msg}`);
   }
 
   return data;

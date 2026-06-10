@@ -114,7 +114,8 @@ export async function handleEvent(body) {
       ]);
 
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: Veggie Solution. `);
-      await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
+      const messageId = await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
+      await pinMessage(messageId);
       await sendDirectMessage(senderUserId, `✅ Done! Veggie Solution group and Supply Knowledge sheet created for *${clientName}*.`);
       return;
     }
@@ -139,8 +140,9 @@ export async function handleEvent(body) {
       console.log('Extracted client name:', clientName);
 
       const fileLink = await copyTemplate(clientName);
+      const messageId = await sendGroupMessage(event.message.chat_id, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
+      await pinMessage(messageId);
 
-      await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
       return;
     }
 
