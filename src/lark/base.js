@@ -72,7 +72,7 @@ async function fetchTableRecords(tableId, clientName) {
   });
 
   const data = await response.json();
-  console.log(`Table ${tableId} response:`, JSON.stringify(data, null, 2));
+  console.log(`Table ${tableId} fetched: ${data.data?.items?.length || 0} records`);
 
   if (data.code !== 0) {
     throw new Error(`Failed to fetch records: ${data.msg}`);
@@ -86,9 +86,6 @@ export async function getClientStory(clientName) {
     fetchTableRecords(TASK_TABLE_ID, clientName),
     fetchTableRecords(STORY_TABLE_ID, clientName),
   ]);
-
-  console.log('Raw task fields sample:', JSON.stringify(taskRecords[0]?.fields, null, 2));
-  console.log('Raw story fields sample:', JSON.stringify(storyRecords[0]?.fields, null, 2));
 
   return { taskRecords, storyRecords };
 }
