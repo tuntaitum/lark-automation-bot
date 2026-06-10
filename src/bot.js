@@ -1,4 +1,4 @@
-import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo } from './lark/messenger.js';
+import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat } from './lark/messenger.js';
 import { copyTemplate } from './lark/drive.js';
 import { getUserTokens } from './tokenStore.js';
 
@@ -9,6 +9,7 @@ const CSN_TRIGGER_KEYWORD = '/CSN';
 const SNSHEET_TRIGGER_KEYWORD = '/SNsheet';
 const GREETINGS_TRIGGER_KEYWORD = ['hello', 'hi', 'hey', 'หวัดดี', 'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'Ni hao', '你好', '您好'];
 const VOICEFORM_TRIGGER_KEYWORD = '/voiceform';
+const RENAME_TRIGGER_KEYWORD = '/rename';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -128,6 +129,30 @@ export async function handleEvent(body) {
       const fileLink = await copyTemplate(clientName);
 
       await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
+      return;
+    }
+
+    // /rename [new name] — renames the clientName of the group chat (group chat only)
+    if (event.message.chat_type === 'group' && text?.startsWith(RENAME_TRIGGER_KEYWORD)) {
+      const newClientName = text.replace(RENAME_TRIGGER_KEYWORD, '').trim();
+
+      if (!newClientName) {
+        await sendGroupMessage(event.message.chat_id, '⚠️ Please include a new client name — e.g. /rename Cogistics');
+        return;
+      }
+
+      // get current group name to extract suffix
+      const groupInfo = await getGroupInfo(event.message.chat_id);
+      const currentName = groupInfo.name;
+
+      // extract suffix e.g. " - 3PL" or " - Veggie Solution"
+      const suffixMatch = currentName.match(/ - (.+)$/);
+      const suffix = suffixMatch ? ` - ${suffixMatch[1]}` : '';
+
+      const newName = `${newClientName}${suffix}`;
+
+      await renameGroupChat(event.message.chat_id, newName);
+      await sendGroupMessage(event.message.chat_id, `✅ Group renamed to *${newName}*`);
       return;
     }
 
