@@ -5,6 +5,7 @@ import { getUserTokens } from './tokenStore.js';
 const TPL_TRIGGER_KEYWORD = '!3PL';
 const VEGGIE_TRIGGER_KEYWORD = '!Veggie';
 const HELP_KEYWORD = '!help';
+const CSN_TRIGGER_KEYWORD = '!CSN'
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -41,12 +42,15 @@ export async function handleEvent(body) {
         '🤖 **Available Commands**',
         '',
         '🚛 **!3PL [ClientName]**',
-        'Creates a 3PL group chat and tags CEO to create a CSN sheet.',
+        'Creates a 3PL group chat.',
         'Example: `!3PL Cogistics`',
         '',
         '🥦 **!Veggie [ClientName]**',
-        'Creates a Veggie Solution group chat, Supply Knowledge Sheet, and tags CEO for CSN.',
-        'Example: `!Veggie SeaTech`',
+        'Creates a Veggie Solution group chat and Supply Knowledge Sheet.',
+        'Example: `!Veggie Cogistics`',
+        '',
+        '📝 **@Lao Gong !CSN** (in group chat)',
+        'Tags CEO to create a CSN sheet for the client.',
         '',
         '❓ **!help**',
         'Shows this list of commands.',
@@ -68,8 +72,8 @@ export async function handleEvent(body) {
       const members = [...new Set([...DEFAULT_3PL_MEMBER_IDS, senderUserId, CEO_USER_ID])];
       const chatId = await createGroupChat(`${clientName} - 3PL`, members);
 
-      await sendGroupMention(chatId, CEO_USER_ID, `please create a CSN sheet for ${clientName} 🙏`);
-      await sendDirectMessage(senderUserId, `✅ Done! 3PL group created for *${clientName}* and CEO has been tagged.`);
+      await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: 3PL. `);
+      await sendDirectMessage(senderUserId, `✅ Done! 3PL group created for *${clientName}*.`);
       return;
     }
 
@@ -78,7 +82,7 @@ export async function handleEvent(body) {
       const clientName = text.replace(VEGGIE_TRIGGER_KEYWORD, '').trim();
 
       if (!clientName) {
-        await sendDirectMessage(senderUserId, '⚠️ Please include a client name — e.g. !Veggie SeaTech');
+        await sendDirectMessage(senderUserId, '⚠️ Please include a client name — e.g. !Veggie Cogistics');
         return;
       }
 
@@ -97,9 +101,16 @@ export async function handleEvent(body) {
         createGroupChat(`${clientName} - Veggie Solution`, members),
       ]);
 
+      await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: Veggie Solution. `);
       await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet for *${clientName}*:\n${fileLink}`);
-      await sendGroupMention(chatId, CEO_USER_ID, `please create a CSN sheet for ${clientName} 🙏`);
       await sendDirectMessage(senderUserId, `✅ Done! Veggie Solution group and sheet created for *${clientName}*.`);
+      return;
+    }
+
+    // !CSN — tag CEO to make CSN sheet (only works in group chats)
+    if (event.message.chat_type === 'group' && text?.includes(CSN_TRIGGER_KEYWORD)) {
+      const chatId = event.message.chat_id;
+      await sendGroupMention(chatId, CEO_USER_ID, `please create a CSN sheet for this client krub 🙏`);
       return;
     }
 
