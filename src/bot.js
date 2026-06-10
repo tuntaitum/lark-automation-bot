@@ -1,4 +1,4 @@
-import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat } from './lark/messenger.js';
+import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage } from './lark/messenger.js';
 import { copyTemplate } from './lark/drive.js';
 import { getUserTokens } from './tokenStore.js';
 
