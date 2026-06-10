@@ -121,3 +121,25 @@ export async function getGroupInfo(chatId) {
 
   return data.data;
 }
+
+export async function renameGroupChat(chatId, newName) {
+  const token = await getTenantAccessToken();
+
+  const response = await fetch(`https://open.larksuite.com/open-apis/im/v1/chats/${chatId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name: newName }),
+  });
+
+  const data = await response.json();
+  console.log('Rename group response:', JSON.stringify(data, null, 2));
+
+  if (data.code !== 0) {
+    throw new Error(`Failed to rename group: ${data.msg}`);
+  }
+
+  return data;
+}
