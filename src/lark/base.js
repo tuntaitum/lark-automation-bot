@@ -128,7 +128,7 @@ export function formatStoryMessage(clientName, taskRecords, storyRecords) {
     for (const [voiceDate, tasks] of Object.entries(grouped)) {
       lines.push(`\n🗓 *${voiceDate}*`);
       for (const t of tasks) {
-        lines.push(`• ${t.task} | ${t.status} | ${t.assignedDate}`);
+        lines.push(`• ${t.status} | ${t.assignedDate} | ${t.task}`);
       }
     }
   }
@@ -148,5 +148,5 @@ export function formatStoryMessage(clientName, taskRecords, storyRecords) {
     }
   }
 
-  return lines.join('\n');
+  return lines.join('\n'); 
 }
