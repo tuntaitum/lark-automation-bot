@@ -144,7 +144,7 @@ export function formatStoryMessage(clientName, taskRecords, storyRecords) {
       const fields = record.fields;
       const content = extractFieldValue(fields['Content']);
       const date = formatTimestamp(extractFieldValue(fields['Date']));
-      lines.push(`• ${content} — ${date}`);
+      lines.push(`• ${date} - ${content}`);
     }
   }
 
