@@ -17,7 +17,7 @@ app.get('/oauth/start', (req, res) => {
   const params = new URLSearchParams({
     client_id: process.env.LARK_APP_ID,
     redirect_uri: `${process.env.APP_BASE_URL}/oauth/callback`,
-    scope: 'drive:drive drive:file offline_access',
+    scope: 'drive:drive drive:file offline_access task:task:write',
     state: userId || 'unknown', // pass userId through OAuth flow
   });
 
