@@ -60,7 +60,7 @@ app.post('/webhook', async (req, res) => {
 // webhook for new voice from client voice tracking base
 app.post('/voice-webhook', async (req, res) => {
   const body = req.body; //clientName, vDate, solution, solutionExplain, veggieProduct, tplProduct, tplDestination, extraInfo 
-  console.log('New voice received');
+  console.log('Voice webhook body:', JSON.stringify(req.body, null, 2));
 
   res.status(200).json({ success: true });
 
