@@ -64,7 +64,9 @@ app.post('/voice-webhook', async (req, res) => {
 
   res.status(200).json({ success: true });
 
+  console.log('Calling handleNewVoice...');
   await handleNewVoice(clientName, vDate, vSolution);
+  console.log('handleNewVoice done');
 });
 
 app.get('/ping', (req, res) => {

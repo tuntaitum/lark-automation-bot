@@ -229,7 +229,10 @@ export async function handleEvent(body) {
 }
 
 export async function handleNewVoice(clientName, vDate, vSolution) {
-  await sendDirectMessage(BOT_OWNER_ID, clientName+vDate+vSolution);
-
-  return;
+  try {
+    await sendDirectMessage(BOT_OWNER_ID, clientName + vDate + vSolution);
+  } catch (error) {
+    console.error('handleNewVoice error:', error.message);
+    console.error('Stack:', error.stack);
+  }
 }
