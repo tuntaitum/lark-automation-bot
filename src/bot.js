@@ -1,4 +1,4 @@
-import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage } from './lark/messenger.js';
+import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats } from './lark/messenger.js';
 import { copyTemplate } from './lark/drive.js';
 import { getUserTokens } from './tokenStore.js';
 import { getClientStory, formatStoryMessage } from './lark/base.js';
@@ -12,6 +12,7 @@ const GREETINGS_TRIGGER_KEYWORD = ['hello', 'hi', 'hey', 'หวัดดี', '
 const VOICEFORM_TRIGGER_KEYWORD = '/voiceform';
 const RENAME_TRIGGER_KEYWORD = '/rename';
 const STORY_TRIGGER_KEYWORD = '/story';
+const LISTGC_TRIGGER_KEYWORD = '/listgc';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -124,6 +125,34 @@ export async function handleEvent(body) {
       const messageId = await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
       await pinMessage(messageId);
       await sendDirectMessage(senderUserId, `✅ Done! Veggie Solution group and Supply Knowledge sheet created for *${clientName}*.`);
+      return;
+    }
+
+    // /listgc — list all active client group chats (DM only)
+    if (text === LISTGC_TRIGGER_KEYWORD && event.message.chat_type === 'p2p') {
+      const { veggiChats, tplChats } = await listClientChats();
+
+      const lines = ['📊 *Active Client Group Chats*', ''];
+
+      lines.push(`🥦 *Veggie Solution (${veggiChats.length})*`);
+      if (veggiChats.length === 0) {
+        lines.push('None');
+      } else {
+        veggiChats.forEach(chat => lines.push(`• ${chat.name}`));
+      }
+
+      lines.push('');
+      lines.push(`🚛 *3PL (${tplChats.length})*`);
+      if (tplChats.length === 0) {
+        lines.push('None');
+      } else {
+        tplChats.forEach(chat => lines.push(`• ${chat.name}`));
+      }
+
+      lines.push('');
+      lines.push(`*Total: ${veggiChats.length + tplChats.length} active groups*`);
+
+      await sendDirectMessage(senderUserId, lines.join('\n'));
       return;
     }
 

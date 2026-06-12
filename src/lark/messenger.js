@@ -165,3 +165,41 @@ export async function pinMessage(messageId) {
 
   return data;
 }
+
+export async function listClientChats() {
+  const token = await getTenantAccessToken();
+  let allChats = [];
+  let pageToken = null;
+
+  // loop through pages since API returns max 100 per page
+  do {
+    const url = new URL('https://open.larksuite.com/open-apis/im/v1/chats');
+    url.searchParams.set('page_size', '100');
+    if (pageToken) url.searchParams.set('page_token', pageToken);
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+    console.log('List chats response:', JSON.stringify(data, null, 2));
+
+    if (data.code !== 0) {
+      throw new Error(`Failed to list chats: ${data.msg}`);
+    }
+
+    allChats = allChats.concat(data.data?.items || []);
+    pageToken = data.data?.has_more ? data.data.page_token : null;
+
+  } while (pageToken);
+
+  // filter for client group chats only
+  const veggiChats = allChats.filter(chat => chat.name?.endsWith('- Veggie Solution'));
+  const tplChats = allChats.filter(chat => chat.name?.endsWith('- 3PL'));
+
+  return { veggiChats, tplChats };
+}
