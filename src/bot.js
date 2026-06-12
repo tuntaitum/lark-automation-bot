@@ -1,6 +1,6 @@
-import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats } from './lark/messenger.js';
+import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats, disbandGroupChat, getGroupMembers } from './lark/messenger.js';
 import { copyTemplate } from './lark/drive.js';
-import { getUserTokens } from './tokenStore.js';
+import { getUserTokens, setLastActivity, deleteLastActivity } from './tokenStore.js';
 import { getClientStory, formatStoryMessage } from './lark/base.js';
 
 const TPL_TRIGGER_KEYWORD = '/3PL';
@@ -13,6 +13,7 @@ const VOICEFORM_TRIGGER_KEYWORD = '/voiceform';
 const RENAME_TRIGGER_KEYWORD = '/rename';
 const STORY_TRIGGER_KEYWORD = '/story';
 const LISTGC_TRIGGER_KEYWORD = '/listgc';
+const DISBAND_TRIGGER_KEYWORD = '/disband';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -44,9 +45,15 @@ export async function handleEvent(body) {
     console.log('Chat type:', event.message.chat_type);
     console.log('Text:', text);
 
-    // in group chats, only process messages that start with /
-    if (event.message.chat_type === 'group' && !text?.startsWith('/')) {
-      return;
+    // track last activity for client group chats
+    if (event.message.chat_type === 'group') {
+      const chatName = ''; 
+      await setLastActivity(event.message.chat_id);
+      
+      // in group chats, only process messages that start with /
+      if (!text || !text?.startsWith('/')) {
+        return;
+      }
     }
 
     console.log('Message received:', text);
@@ -235,6 +242,23 @@ export async function handleEvent(body) {
       } else {
         await sendGroupMessage(event.message.chat_id, message);
       }
+      return;
+    }
+
+    // /disband — disband group chat (group only)
+    if (event.message.chat_type === 'group' && text === DISBAND_TRIGGER_KEYWORD) {
+      const chatId = event.message.chat_id;
+      const groupInfo = await getGroupInfo(chatId);
+      const groupName = groupInfo.name;
+      const groupMembers = await getGroupMembers(chatId);
+
+      for (i in groupMembers) {
+        await sendDirectMessage(i, `Disbanded Group Chat: ${groupName}`);
+      }
+
+      await sendGroupMessage(chatId, '👋 Disbanding this group. Goodbye!');
+      await disbandGroupChat(chatId);
+      await deleteLastActivity(chatId);
       return;
     }
 

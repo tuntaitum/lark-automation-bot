@@ -25,3 +25,29 @@ export async function saveUserTokens(userId, accessToken, refreshToken) {
     throw error;
   }
 }
+
+export async function setLastActivity(chatId) {
+  try {
+    await redis.set(`lastActivity:${chatId}`, Date.now().toString());
+  } catch (error) {
+    console.error('Failed to set last activity:', error.message);
+  }
+}
+
+export async function getLastActivity(chatId) {
+  try {
+    const value = await redis.get(`lastActivity:${chatId}`);
+    return value ? parseInt(value) : null;
+  } catch (error) {
+    console.error('Failed to get last activity:', error.message);
+    return null;
+  }
+}
+
+export async function deleteLastActivity(chatId) {
+  try {
+    await redis.del(`lastActivity:${chatId}`);
+  } catch (error) {
+    console.error('Failed to delete last activity:', error.message);
+  }
+}
