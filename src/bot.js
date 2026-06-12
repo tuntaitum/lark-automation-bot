@@ -230,7 +230,49 @@ export async function handleEvent(body) {
 
 export async function handleNewVoice(body) {
   try {
-    await sendDirectMessage(BOT_OWNER_ID, "New group created for client: " + body?.clientName + "\nSolution: " + body?.solution);
+
+    //Define Variables
+    const clientName = body?.clientName;
+    const vDate = body?.vDate;
+    const solution = body?.solution;
+    const solutionExplain = body?.solutionExplain;
+    const veggieProduct = body?.veggieProduct;
+    const tplProduct = body?.tplProduct;
+    const tplDestination = body?.tplDestination;
+    const extraInfo = body?.extraInfo;
+
+    if (solution === "Vegetable Industry Solutions")  {
+      const members = [...new Set([...DEFAULT_VEGGIES_MEMBER_IDS, BOT_OWNER_ID, CEO_USER_ID])];
+      const voice_info_message = 
+      `📝 Voice Info:` + 
+      '\n\nClient: ' + clientName + 
+      '\nVoice Date: ' + vDate + 
+      '\nกำลังตามหา: ' + veggieProduct +
+      '\npain point: ' + solutionExplain +
+      '\nextra info: ' + extraInfo;
+      
+      const chatId = await createGroupChat(`${clientName} - Veggie Solution`, members);
+      await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: Veggie Solution. \nTo create a supply knowledge sheet, type /SNsheet`);
+      await sendDirectMessage(BOT_OWNER_ID, `✅ Done! Veggie Solution group created for *${clientName}*.`);
+      await sendGroupMessage(chatId, voice_info_message);
+      return;
+    } else {
+      const members = [...new Set([...DEFAULT_3PL_MEMBER_IDS, BOT_OWNER_ID, CEO_USER_ID])];
+      const voice_info_message = 
+      `📝 Voice Info:` + 
+      '\n\nClient: ' + clientName + 
+      '\nVoice Date: ' + vDate + 
+      '\nสินค้า: ' + tplProduct +
+      '\nจัดส่งไปที่: ' + tplDestination +
+      '\npain point: ' + solutionExplain +
+      '\nextra info: ' + extraInfo;
+      
+      const chatId = await createGroupChat(`${clientName} - 3PL`, members);
+      await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: 3PL.`);
+      await sendDirectMessage(BOT_OWNER_ID, `✅ Done! 3PL group created for *${clientName}*.`);
+      await sendGroupMessage(chatId, voice_info_message);
+      return;
+    }
 
   } catch (error) {
     console.error('handleNewVoice error:', error.message);
