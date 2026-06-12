@@ -243,3 +243,68 @@ export async function getGroupMembers(chatId) {
 
   return data.data?.items || [];
 }
+
+export async function sendAuthCard(userId) {
+  const token = await getTenantAccessToken();
+  const authUrl = `${process.env.APP_BASE_URL}/oauth/start?userId=${userId}`;
+
+  const card = {
+    schema: '2.0',
+    body: {
+      elements: [
+        {
+          tag: 'markdown',
+          content: '🔐 **Authentication Required**\n\nYour session has expired or you haven\'t authenticated yet. Please click below to authorize Lao Gong.',
+        },
+        {
+          tag: 'action',
+          actions: [
+            {
+              tag: 'button',
+              text: {
+                tag: 'plain_text',
+                content: '🔑 Authenticate Now',
+              },
+              type: 'primary',
+              behaviors: [
+                {
+                  type: 'open_url',
+                  default_url: authUrl,
+                }
+              ],
+            }
+          ],
+        }
+      ]
+    },
+    header: {
+      title: {
+        tag: 'plain_text',
+        content: 'Lao Gong Authorization',
+      },
+      template: 'yellow',
+    },
+  };
+
+  const response = await fetch('https://open.larksuite.com/open-apis/im/v1/messages?receive_id_type=user_id', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      receive_id: userId,
+      msg_type: 'interactive',
+      content: JSON.stringify(card),
+    }),
+  });
+
+  const data = await response.json();
+  console.log('Auth card response:', JSON.stringify(data, null, 2));
+
+  if (data.code !== 0) {
+    throw new Error(`Failed to send auth card: ${data.msg}`);
+  }
+
+  return data;
+}

@@ -1,4 +1,4 @@
-import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats, disbandGroupChat, getGroupMembers } from './lark/messenger.js';
+import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats, disbandGroupChat, getGroupMembers, sendAuthCard } from './lark/messenger.js';
 import { copyTemplate } from './lark/drive.js';
 import { getUserTokens, setLastActivity, deleteLastActivity } from './tokenStore.js';
 import { getClientStory, formatStoryMessage } from './lark/base.js';
@@ -186,8 +186,7 @@ export async function handleEvent(body) {
 
       const userTokens = await getUserTokens(senderUserId);
       if (!userTokens) {
-        const authUrl = `${process.env.APP_BASE_URL}/oauth/start?userId=${senderUserId}`;
-        await sendDirectMessage(senderUserId, `👋 Please authenticate first:\n${authUrl}`);
+        await sendAuthCard(senderUserId);
         return;
       }
 
@@ -321,6 +320,18 @@ export async function handleEvent(body) {
   } catch (error) {
     console.error('Bot error:', error.message);
     console.error('Stack:', error.stack);
+
+    // notify bot owner if owner token is missing
+    if (error.message.includes('Bot owner token not found')) {
+      await sendAuthCard(BOT_OWNER_ID);
+      return;
+    }
+
+    // other auth errors — send card to whoever triggered it
+    if (error.message.includes('token') || error.message.includes('Unauthorized')) {
+      await sendAuthCard(senderUserId);
+      return;
+    }
   }
 }
 
@@ -371,7 +382,13 @@ export async function handleNewVoice(body) {
     }
 
   } catch (error) {
-    console.error('handleNewVoice error:', error.message);
+    console.error('Bot error:', error.message);
     console.error('Stack:', error.stack);
+
+    // notify bot owner if owner token is missing
+    if (error.message.includes('Bot owner token not found')) {
+      await sendAuthCard(BOT_OWNER_ID);
+      return;
+    }
   }
 }
