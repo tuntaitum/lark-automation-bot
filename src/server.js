@@ -98,6 +98,7 @@ async function checkGroupActivity() {
 
         // get all members to tag them
         const members = await getGroupMembers(chat.chat_id);
+        console.log('Members:', JSON.stringify(members, null, 2));
         const mentions = members
           .filter(m => m.member_id_type === 'user_id')
           .map(m => `<at id="${m.member_id}"></at>`)
@@ -105,7 +106,7 @@ async function checkGroupActivity() {
 
         await sendGroupMessage(
           chat.chat_id,
-          `${mentions}\n\n⏰ No activity in over 72 hours. Is there any progress with this client, or should this group be disbanded?\n\nType */disband* to disband this group.`
+          `<at user_id="all">Everyone</at>\n\n⏰ No activity in over 72 hours. Is there any progress with this client, or should this group be disbanded?\n\nType /disband to disband this group.`
         );
 
         // reset timer after bot pings

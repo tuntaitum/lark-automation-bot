@@ -207,27 +207,26 @@ export async function listClientChats() {
 export async function disbandGroupChat(chatId) {
   const token = await getTenantAccessToken();
 
-  const response = await fetch(`https://open.larksuite.com/open-apis/im/v1/chats/${chatId}/disband`, {
-    method: 'POST',
+  const response = await fetch(`https://open.larksuite.com/open-apis/im/v1/chats/${chatId}`, {
+    method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
 
-  const data = await response.json();
-
-  if (data.code !== 0) {
-    throw new Error(`Failed to disband group: ${data.msg}`);
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Failed to disband group: ${text}`);
   }
 
-  return data;
+  return true;
 }
 
 export async function getGroupMembers(chatId) {
   const token = await getTenantAccessToken();
 
-  const response = await fetch(`https://open.larksuite.com/open-apis/im/v1/chats/${chatId}/user_id_type=user_id`, {
+  const response = await fetch(`https://open.larksuite.com/open-apis/im/v1/chats/${chatId}/members?member_id_type=user_id`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -236,6 +235,7 @@ export async function getGroupMembers(chatId) {
   });
 
   const data = await response.json();
+  console.log('Members response:', JSON.stringify(data, null, 2));
 
   if (data.code !== 0) {
     throw new Error(`Failed to get group members: ${data.msg}`);

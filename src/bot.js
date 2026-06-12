@@ -252,9 +252,14 @@ export async function handleEvent(body) {
       const groupName = groupInfo.name;
       const groupMembers = await getGroupMembers(chatId);
 
-      for (i in groupMembers) {
-        await sendDirectMessage(i, `Disbanded Group Chat: ${groupName}`);
-      }
+      await Promise.all(
+        groupMembers.map(member =>
+          sendDirectMessage(
+          member.member_id,
+          `Disbanded Group Chat: ${groupName}`
+          )
+        )
+      );
 
       await sendGroupMessage(chatId, '👋 Disbanding this group. Goodbye!');
       await disbandGroupChat(chatId);
