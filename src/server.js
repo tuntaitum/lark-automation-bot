@@ -22,6 +22,7 @@ app.get('/oauth/start', (req, res) => {
   });
 
   const authUrl = `https://accounts.larksuite.com/open-apis/authen/v1/authorize?${params}`;
+  console.log('Auth URL:', authUrl);
   res.redirect(authUrl);
 });
 
