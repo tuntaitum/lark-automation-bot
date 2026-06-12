@@ -230,7 +230,7 @@ export async function handleEvent(body) {
 
 export async function handleNewVoice(body) {
   try {
-    await sendDirectMessage(BOT_OWNER_ID, "New group created for client: " + body?.clientName + body?.vDate + body?.solution);
+    await sendDirectMessage(BOT_OWNER_ID, "New group created for client: " + body);
 
   } catch (error) {
     console.error('handleNewVoice error:', error.message);
