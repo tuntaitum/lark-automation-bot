@@ -59,14 +59,12 @@ app.post('/webhook', async (req, res) => {
 
 // webhook for new voice from client voice tracking base
 app.post('/voice-webhook', async (req, res) => {
-  const { clientName, vDate, vSolution } = req.body;
-  console.log('New voice received:', clientName, vDate, vSolution);
+  const body = req.body; //clientName, vDate, solution, solutionExplain, veggieProduct, tplProduct, tplDestination, extraInfo 
+  console.log('New voice received');
 
   res.status(200).json({ success: true });
 
-  console.log('Calling handleNewVoice...');
-  await handleNewVoice(clientName, vDate, vSolution);
-  console.log('handleNewVoice done');
+  await handleNewVoice(body);
 });
 
 app.get('/ping', (req, res) => {
