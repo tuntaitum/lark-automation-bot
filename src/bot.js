@@ -22,6 +22,7 @@ const DEFAULT_3PL_MEMBER_IDS = process.env.DEFAULT_3PL_MEMBER_IDS
   : [];
 
 const CEO_USER_ID = process.env.CEO_USER_ID;
+const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 
 export async function handleEvent(body) {
   try {
@@ -225,4 +226,10 @@ export async function handleEvent(body) {
     console.error('Bot error:', error.message);
     console.error('Stack:', error.stack);
   }
+}
+
+export async function handleNewVoice(clientName, vDate, vSolution) {
+  await sendDirectMessage(BOT_OWNER_ID, clientName+vDate+vSolution);
+
+  return;
 }
