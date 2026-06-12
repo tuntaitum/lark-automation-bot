@@ -2,6 +2,7 @@ import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat,
 import { copyTemplate } from './lark/drive.js';
 import { getUserTokens, setLastActivity, deleteLastActivity } from './tokenStore.js';
 import { getClientStory, formatStoryMessage } from './lark/base.js';
+import { createTask } from './lark/tasks.js';
 
 const TPL_TRIGGER_KEYWORD = '/3PL';
 const VEGGIE_TRIGGER_KEYWORD = '/Veggie';
@@ -14,6 +15,7 @@ const RENAME_TRIGGER_KEYWORD = '/rename';
 const STORY_TRIGGER_KEYWORD = '/story';
 const LISTGC_TRIGGER_KEYWORD = '/listgc';
 const DISBAND_TRIGGER_KEYWORD = '/disband';
+const QTASK_TRIGGER_KEYWORD = '/qtask';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -75,6 +77,10 @@ export async function handleEvent(body) {
         '📊 **/listgc**',
         'Lists all active Veggie Solution and 3PL client group chats.',
         '',
+        '📌 */qtask [task info]* (DM only)',
+        'Creates a quick task assigned to you due tomorrow.',
+        'Example: `/qtask Call Tai about systems`',
+        '',
         '📋 **/SNsheet** (in group chat)',
         'Creates a Supply Knowledge Sheet using the group name as client name.',
         '',
@@ -88,6 +94,9 @@ export async function handleEvent(body) {
         '✏️ **/rename [ClientName]** (in group chat)',
         'Renames the group chat while preserving the suffix (3PL or Veggie Solution).',
         'Example: `/rename Cogistics`',
+        '',
+        '🗑️ */disband* (in group chat)',
+        'Disbands the current group chat and removes it from tracking.',
         '',
         '❓ **/help**',
         'Shows this list of commands.',
@@ -163,6 +172,32 @@ export async function handleEvent(body) {
       lines.push(`*Total: ${veggiChats.length + tplChats.length} active groups*`);
 
       await sendDirectMessage(senderUserId, lines.join('\n'));
+      return;
+    }
+
+    // /qtask [task info] — create a quick task (DM only)
+    if (text?.startsWith(QTASK_TRIGGER_KEYWORD) && event.message.chat_type === 'p2p') {
+      const taskInfo = text.replace(QTASK_TRIGGER_KEYWORD, '').trim();
+
+      if (!taskInfo) {
+        await sendDirectMessage(senderUserId, '⚠️ Please include task info — e.g. /qtask Call SeaTech about pricing');
+        return;
+      }
+
+      const userTokens = await getUserTokens(senderUserId);
+      if (!userTokens) {
+        const authUrl = `${process.env.APP_BASE_URL}/oauth/start?userId=${senderUserId}`;
+        await sendDirectMessage(senderUserId, `👋 Please authenticate first:\n${authUrl}`);
+        return;
+      }
+
+      const task = await createTask(taskInfo, senderUserId);
+  
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const dueDateStr = tomorrow.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+      await sendDirectMessage(senderUserId, `✅ Task created!\n📌 *${taskInfo}*\n📅 Due: ${dueDateStr}`);
       return;
     }
 
