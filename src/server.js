@@ -1,11 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
 import { handleEvent, handleNewVoice } from './bot.js';
-import { exchangeCodeForToken } from './lark/auth.js';
+import { exchangeCodeForToken, refreshUserToken } from './lark/auth.js';
 import { saveUserTokens, getLastActivity, setLastActivity } from './tokenStore.js';
 import { listClientChats, getGroupMembers, sendGroupMessage } from './lark/messenger.js';
 
 
+const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 
 const app = express();
 app.use(express.json());
@@ -121,6 +122,19 @@ async function checkGroupActivity() {
   }
 }
 
+async function keepOwnerTokenAlive() {
+  try {
+    await refreshUserToken(BOT_OWNER_ID);
+    console.log('Owner token refreshed successfully.');
+  } catch (error) {
+    console.error('Error refreshing owner token:', error.message);
+  }
+}
+
 // run once on startup then every 24 hours
 checkGroupActivity();
 setInterval(checkGroupActivity, 24 * 60 * 60 * 1000);
+
+// run once on startup, then every 3 days
+keepOwnerTokenAlive();
+setInterval(keepOwnerTokenAlive, 3 * 24 * 60 * 60 * 1000);
