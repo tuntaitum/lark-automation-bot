@@ -131,9 +131,30 @@ async function keepOwnerTokenAlive() {
   }
 }
 
-// run once on startup then every 24 hours
-checkGroupActivity();
-setInterval(checkGroupActivity, 24 * 60 * 60 * 1000);
+function scheduleActivityCheck() {
+  const now = new Date();
+  const next9am = new Date();
+  
+  // set to 2am UTC = 9am Bangkok (UTC+7)
+  next9am.setUTCHours(2, 0, 0, 0);
+
+  // if 2am UTC already passed today, schedule for tomorrow
+  if (now >= next9am) {
+    next9am.setUTCDate(next9am.getUTCDate() + 1);
+  }
+
+  const msUntil9am = next9am - now;
+  const hoursUntil = (msUntil9am / 1000 / 60 / 60).toFixed(1);
+  console.log(`Activity check scheduled in ${hoursUntil} hours (next 9am Bangkok time)`);
+
+  setTimeout(() => {
+    checkGroupActivity();
+    // repeat every 24 hours after first run
+    setInterval(checkGroupActivity, 24 * 60 * 60 * 1000);
+  }, msUntil9am);
+}
+
+scheduleActivityCheck();
 
 // run once on startup, then every 3 days
 keepOwnerTokenAlive();
