@@ -3,6 +3,7 @@ import { copyTemplate } from './lark/drive.js';
 import { getUserTokens, setLastActivity, deleteLastActivity } from './tokenStore.js';
 import { getClientStory, formatStoryMessage } from './lark/base.js';
 import { createTask } from './lark/tasks.js';
+import { getCompanyInfo, formatCompanyInfo } from './lark/dbd.js';
 
 const TPL_TRIGGER_KEYWORD = '/3PL';
 const VEGGIE_TRIGGER_KEYWORD = '/Veggie';
@@ -16,6 +17,7 @@ const STORY_TRIGGER_KEYWORD = '/story';
 const LISTGC_TRIGGER_KEYWORD = '/listgc';
 const DISBAND_TRIGGER_KEYWORD = '/disband';
 const QTASK_TRIGGER_KEYWORD = '/qtask';
+const CINFO_TRIGGER_KEYWORD = '/cinfo';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -94,6 +96,10 @@ export async function handleEvent(body) {
         '✏️ **/rename [ClientName]** (in group chat)',
         'Renames the group chat while preserving the suffix (3PL or Veggie Solution).',
         'Example: `/rename Cogistics`',
+        '',
+        '🏢 */cinfo [juristic ID]* (in group chat)',
+        'Pulls company info from DBD registry.',
+        'Example: `/cinfo 0107555000023`',
         '',
         '🗑️ */disband* (in group chat)',
         'Disbands the current group chat and removes it from tracking.',
@@ -311,6 +317,22 @@ export async function handleEvent(body) {
     // /voiceform - sends user the client voice form link
     if (text === VOICEFORM_TRIGGER_KEYWORD) {
       await sendDirectMessage(senderUserId, `แบบสอบถามความต้องการเบื้องต้น Cogistics: [https://forms.gle/bTvJfixHg46EvpTC9](https://forms.gle/bTvJfixHg46EvpTC9)`);
+      return;
+    }
+
+    // /cinfo [company juristic ID] - fetches company info from DBD API (group only)
+    if (event.message.chat_type === 'group' && text?.startsWith(CINFO_TRIGGER_KEYWORD)) {
+      const juristicId = text.replace(CINFO_TRIGGER_KEYWORD, '').trim();
+
+      if (!juristicId) {
+        await sendDirectMessage(senderUserId, '⚠️ Please include a company juristic ID — e.g. /cinfo 0105554000013');
+        return;
+      }
+
+      const info = await getCompanyInfo(juristicId);
+      const message = formatCompanyInfo(info);
+      
+      await sendGroupMessage(event.message.chat_id, message);
       return;
     }
 
