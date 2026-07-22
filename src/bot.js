@@ -1,5 +1,5 @@
 import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats, disbandGroupChat, getGroupMembers, sendAuthCard } from './lark/messenger.js';
-import { copyTemplate } from './lark/drive.js';
+import { copyTemplate, createNoteFile } from './lark/drive.js';
 import { getUserTokens, setLastActivity, deleteLastActivity } from './tokenStore.js';
 import { getClientStory, formatStoryMessage } from './lark/base.js';
 import { createTask } from './lark/tasks.js';
@@ -18,6 +18,7 @@ const LISTGC_TRIGGER_KEYWORD = '/listgc';
 const DISBAND_TRIGGER_KEYWORD = '/disband';
 const QTASK_TRIGGER_KEYWORD = '/qtask';
 const CINFO_TRIGGER_KEYWORD = '/cinfo';
+const NOTEFILE_TRIGGER_KEYWORD = '/notefile';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -85,6 +86,9 @@ export async function handleEvent(body) {
         '',
         '📋 **/SNsheet** (in group chat)',
         'Creates a Supply Knowledge Sheet using the group name as client name.',
+        '',
+        '📋 **/notefile** (in group chat)',
+        'Creates a Note File using the group name as client name.',
         '',
         '📝 **/CSN** (in group chat)',
         'Tags CEO to create a CSN sheet for the client.',
@@ -227,6 +231,25 @@ export async function handleEvent(body) {
 
       const fileLink = await copyTemplate(clientName);
       const messageId = await sendGroupMessage(event.message.chat_id, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
+      await pinMessage(messageId);
+
+      return;
+    }
+
+    // /notefile — create Notes File from group name (group chat only)
+    if (event.message.chat_type === 'group' && text?.includes(NOTEFILE_TRIGGER_KEYWORD)) {
+      const chatId = event.message.chat_id;
+
+      // get group name and extract client name
+      const groupInfo = await getGroupInfo(chatId);
+      const groupName = groupInfo.name;
+      const clientName = groupName.split(' - ')[0].trim();
+
+      console.log('Group name:', groupName);
+      console.log('Extracted client name:', clientName);
+
+      const fileLink = await createNoteFile(clientName);
+      const messageId = await sendGroupMessage(event.message.chat_id, `📋 Note File created for *${clientName}*:\n${fileLink}`);
       await pinMessage(messageId);
 
       return;
