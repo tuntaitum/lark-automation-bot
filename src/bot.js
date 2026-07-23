@@ -423,6 +423,9 @@ export async function handleNewVoice(body) {
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: 3PL.`);
       await sendDirectMessage(BOT_OWNER_ID, `✅ Done! 3PL group created for *${clientName}*.`);
       await sendGroupMessage(chatId, voice_info_message);
+      const fileLink = await createNoteFile(clientName);
+      const messageId = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${fileLink}`);
+      await pinMessage(messageId);
       return;
     }
 
