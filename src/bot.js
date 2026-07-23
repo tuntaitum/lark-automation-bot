@@ -407,6 +407,9 @@ export async function handleNewVoice(body) {
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: Veggie Solution. \nTo create a supply knowledge sheet, type /SNsheet`);
       await sendDirectMessage(BOT_OWNER_ID, `✅ Done! Veggie Solution group created for *${clientName}*.`);
       await sendGroupMessage(chatId, voice_info_message);
+      const fileLink = await createNoteFile(clientName);
+      const messageId = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${fileLink}`);
+      await pinMessage(messageId);
       return;
     } else {
       const members = [...new Set([...DEFAULT_3PL_MEMBER_IDS, BOT_OWNER_ID, CEO_USER_ID])];
