@@ -352,23 +352,18 @@ export async function sendVoiceCard(chatId, body) {
         ...details,
         { tag: 'hr' },
         {
-          tag: 'action',
-          actions: [
-            {
-              tag: 'button',
-              text: {
-                tag: 'plain_text',
-                content: '📋 View Voice Record',
-              },
-              type: 'primary',
-              behaviors: [
-                {
-                  type: 'open_url',
-                  default_url: recordUrl,
-                }
-              ],
-            }
-          ],
+        tag: 'button', // Lifted directly into elements array
+        text: {
+          tag: 'plain_text',
+          content: '📋 View Voice Record',
+        },
+        type: 'primary',
+        behaviors: [
+          {
+            type: 'open_url',
+            default_url: recordUrl,
+          }
+        ],
         }
       ],
     },
