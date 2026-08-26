@@ -1,4 +1,4 @@
-import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats, disbandGroupChat, getGroupMembers, sendAuthCard } from './lark/messenger.js';
+import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats, disbandGroupChat, getGroupMembers, sendAuthCard, sendVoiceCard } from './lark/messenger.js';
 import { copyTemplate, createNoteFile } from './lark/drive.js';
 import { getUserTokens, setLastActivity, deleteLastActivity } from './tokenStore.js';
 import { getClientStory, formatStoryMessage } from './lark/base.js';
@@ -339,7 +339,7 @@ export async function handleEvent(body) {
 
     // /voiceform - sends user the client voice form link
     if (text === VOICEFORM_TRIGGER_KEYWORD) {
-      await sendDirectMessage(senderUserId, `แบบสอบถามความต้องการเบื้องต้น Cogistics: [https://forms.gle/bTvJfixHg46EvpTC9](https://forms.gle/bTvJfixHg46EvpTC9)`);
+      await sendDirectMessage(senderUserId, `แบบสอบถามความต้องการเบื้องต้น Cogistics: [https://form.cogistics.co.th/form](https://form.cogistics.co.th/form)`);
       return;
     }
 
@@ -387,48 +387,30 @@ export async function handleNewVoice(body) {
     const clientName = body?.clientName;
     const vDate = body?.vDate;
     const solution = body?.solution;
-    const solutionExplain = body?.solutionExplain;
-    const veggieProduct = body?.veggieProduct;
-    const tplProduct = body?.tplProduct;
-    const tplDestination = body?.tplDestination;
-    const extraInfo = body?.extraInfo;
 
     if (solution === "Vegetable Industry Solutions")  {
       const members = [...new Set([...DEFAULT_VEGGIES_MEMBER_IDS, BOT_OWNER_ID, CEO_USER_ID])];
-      const voice_info_message = 
-      `📝 Voice Info:` + 
-      '\n\nClient: ' + clientName + 
-      '\nVoice Date: ' + vDate + 
-      '\nกำลังตามหา: ' + veggieProduct +
-      '\npain point: ' + solutionExplain +
-      '\nextra info: ' + extraInfo;
-      
       const chatId = await createGroupChat(`${clientName} - Veggie Solution`, members);
+
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: Veggie Solution. \nTo create a supply knowledge sheet, type /SNsheet`);
       await sendDirectMessage(BOT_OWNER_ID, `✅ Done! Veggie Solution group created for *${clientName}*.`);
-      await sendGroupMessage(chatId, voice_info_message);
-      const fileLink = await createNoteFile(clientName);
-      const messageId = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${fileLink}`);
-      await pinMessage(messageId);
+      const voiceCard = await sendVoiceCard(chatId, body);
+      const noteFileLink = await createNoteFile(clientName);
+      const noteFilemessage = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${noteFileLink}`);
+      await pinMessage(voiceCard);
+      await pinMessage(noteFilemessage);
       return;
     } else {
       const members = [...new Set([...DEFAULT_3PL_MEMBER_IDS, BOT_OWNER_ID, CEO_USER_ID])];
-      const voice_info_message = 
-      `📝 Voice Info:` + 
-      '\n\nClient: ' + clientName + 
-      '\nVoice Date: ' + vDate + 
-      '\nสินค้า: ' + tplProduct +
-      '\nจัดส่งไปที่: ' + tplDestination +
-      '\npain point: ' + solutionExplain +
-      '\nextra info: ' + extraInfo;
-      
       const chatId = await createGroupChat(`${clientName} - 3PL`, members);
+      
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: 3PL.`);
       await sendDirectMessage(BOT_OWNER_ID, `✅ Done! 3PL group created for *${clientName}*.`);
-      await sendGroupMessage(chatId, voice_info_message);
-      const fileLink = await createNoteFile(clientName);
-      const messageId = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${fileLink}`);
-      await pinMessage(messageId);
+      const voiceCard = await sendVoiceCard(chatId, body);
+      const noteFileLink = await createNoteFile(clientName);
+      const noteFilemessage = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${noteFileLink}`);
+      await pinMessage(voiceCard);
+      await pinMessage(noteFilemessage);
       return;
     }
 

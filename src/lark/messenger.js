@@ -308,3 +308,91 @@ export async function sendAuthCard(userId) {
 
   return data;
 }
+
+export async function sendVoiceCard(chatId, body) {
+  const token = await getTenantAccessToken();
+
+  const isVeggie = body.solution === 'Vegetable Industry Solutions';
+
+  const BASE_APP_TOKEN = process.env.STORY_BASE_APP_TOKEN;
+  const viewId = isVeggie ? 'vewK9icdwp' : 'vewFAgLH4L';
+  const tableId = process.env.VOICE_TABLE_ID; // Voice Data table
+  const recordUrl = `https://larksuite.com/base/${BASE_APP_TOKEN}?table=${tableId}&view=${viewId}&record=${body.recordId}`;
+
+  const headerColor = isVeggie ? 'green' : 'blue';
+  const headerTitle = isVeggie
+    ? `🥦 Veggie Voice — ${body.clientName}`
+    : `🚛 3PL Voice — ${body.clientName}`;
+
+  // build detail rows based on solution type
+  const details = isVeggie ? [
+    { tag: 'markdown', content: `**📅 Voice Date:** ${body.vDate}` },
+    { tag: 'markdown', content: `**🥬 กำลังตามหา:** ${body.veggieProduct || '-'}` },
+    { tag: 'markdown', content: `**😣 Pain Point:** ${body.solutionExplain || '-'}` },
+    { tag: 'markdown', content: `**📝 Extra Info:** ${body.extraInfo || '-'}` },
+  ] : [
+    { tag: 'markdown', content: `**📅 Voice Date:** ${body.vDate}` },
+    { tag: 'markdown', content: `**📦 Product:** ${body.tplProduct || '-'}` },
+    { tag: 'markdown', content: `**📍 Destination:** ${body.tplDestination || '-'}` },
+    { tag: 'markdown', content: `**😣 Pain Point:** ${body.solutionExplain || '-'}` },
+    { tag: 'markdown', content: `**📝 Extra Info:** ${body.extraInfo || '-'}` },
+  ];
+
+  const card = {
+    schema: '2.0',
+    header: {
+      title: {
+        tag: 'plain_text',
+        content: headerTitle,
+      },
+      template: headerColor,
+    },
+    body: {
+      elements: [
+        ...details,
+        { tag: 'hr' },
+        {
+          tag: 'action',
+          actions: [
+            {
+              tag: 'button',
+              text: {
+                tag: 'plain_text',
+                content: '📋 View Voice Record',
+              },
+              type: 'primary',
+              behaviors: [
+                {
+                  type: 'open_url',
+                  default_url: recordUrl,
+                }
+              ],
+            }
+          ],
+        }
+      ],
+    },
+  };
+
+  const response = await fetch('https://open.larksuite.com/open-apis/im/v1/messages?receive_id_type=chat_id', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      receive_id: chatId,
+      msg_type: 'interactive',
+      content: JSON.stringify(card),
+    }),
+  });
+
+  const data = await response.json();
+  console.log('Voice card response:', JSON.stringify(data, null, 2));
+
+  if (data.code !== 0) {
+    throw new Error(`Failed to send voice card: ${data.msg}`);
+  }
+
+  return data.data?.message_id;
+}
