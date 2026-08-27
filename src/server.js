@@ -2,7 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import { handleEvent, handleNewVoice } from './bot.js';
 import { exchangeCodeForToken, refreshUserToken } from './lark/auth.js';
-import { saveUserTokens, getLastActivity, setLastActivity } from './tokenStore.js';
+import { saveUserTokens, getLastActivity, setLastActivity, isGroupUntracked } from './tokenStore.js';
 import { listClientChats, getGroupMembers, sendGroupMessage } from './lark/messenger.js';
 
 
@@ -89,9 +89,14 @@ async function checkGroupActivity() {
     const THRESHOLD = 72 * 60 * 60 * 1000; // 72 hours in ms
 
     for (const chat of allChats) {
-      const lastActivity = await getLastActivity(chat.chat_id);
+      // skip untracked groups
+      const untracked = await isGroupUntracked(chat.chat_id);
+      if (untracked) {
+        console.log(`Skipping untracked group: ${chat.name}`);
+        continue;
+      }
 
-      // no record means never tracked — treat as inactive
+      const lastActivity = await getLastActivity(chat.chat_id);
       const inactive = !lastActivity || (now - lastActivity) > THRESHOLD;
 
       if (inactive) {
@@ -100,11 +105,6 @@ async function checkGroupActivity() {
         // get all members to tag them
         const members = await getGroupMembers(chat.chat_id);
         console.log('Members:', JSON.stringify(members, null, 2));
-        const mentions = members
-          .filter(m => m.member_id_type === 'user_id')
-          .map(m => `<at id="${m.member_id}"></at>`)
-          .join(' ');
-
         await sendGroupMessage(
           chat.chat_id,
           `<at user_id="all">Everyone</at>\n\n⏰ No activity in over 72 hours. Is there any progress with this client, or should this group be disbanded?\n\nType /disband to disband this group.`

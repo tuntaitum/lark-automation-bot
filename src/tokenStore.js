@@ -51,3 +51,39 @@ export async function deleteLastActivity(chatId) {
     console.error('Failed to delete last activity:', error.message);
   }
 }
+
+export async function untrackGroup(chatId) {
+  try {
+    await redis.set(`untracked:${chatId}`, '1');
+    console.log(`Group untracked: ${chatId}`);
+  } catch (error) {
+    console.error('Failed to untrack group:', error.message);
+  }
+}
+
+export async function trackGroup(chatId) {
+  try {
+    await redis.del(`untracked:${chatId}`);
+    console.log(`Group tracked: ${chatId}`);
+  } catch (error) {
+    console.error('Failed to track group:', error.message);
+  }
+}
+
+export async function isGroupUntracked(chatId) {
+  try {
+    const val = await redis.get(`untracked:${chatId}`);
+    return val === '1';
+  } catch (error) {
+    console.error('Failed to check track status:', error.message);
+    return false;
+  }
+}
+
+export async function deleteUntracked(chatId) {
+  try {
+    await redis.del(`untracked:${chatId}`);
+  } catch (error) {
+    console.error('Failed to delete untracked key:', error.message);
+  }
+}

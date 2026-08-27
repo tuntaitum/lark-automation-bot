@@ -1,6 +1,6 @@
 import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats, disbandGroupChat, getGroupMembers, sendAuthCard, sendVoiceCard } from './lark/messenger.js';
 import { copyTemplate, createNoteFile } from './lark/drive.js';
-import { getUserTokens, setLastActivity, deleteLastActivity } from './tokenStore.js';
+import { getUserTokens, setLastActivity, deleteLastActivity, untrackGroup, trackGroup, deleteUntracked } from './tokenStore.js';
 import { getClientStory, formatStoryMessage } from './lark/base.js';
 import { createTask } from './lark/tasks.js';
 import { getCompanyInfo, formatCompanyInfo } from './lark/dbd.js';
@@ -19,6 +19,8 @@ const DISBAND_TRIGGER_KEYWORD = '/disband';
 const QTASK_TRIGGER_KEYWORD = '/qtask';
 const CINFO_TRIGGER_KEYWORD = '/cinfo';
 const NOTEFILE_TRIGGER_KEYWORD = '/notefile';
+const UNTRACK_TRIGGER_KEYWORD = '/untrack';
+const TRACK_TRIGGER_KEYWORD = '/track';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -104,6 +106,12 @@ export async function handleEvent(body) {
         '🏢 */cinfo [juristic ID]* (in group chat)',
         'Pulls company info from DBD registry.',
         'Example: `/cinfo 0107555000023`',
+        '',
+        '🔕 */untrack* (in group chat)',
+        'Disables inactivity reminders for this group without disbanding it.',
+        '',
+        '🔔 */track* (in group chat)',
+        'Re-enables inactivity reminders for this group and resets the timer.',
         '',
         '🗑️ */disband* (in group chat)',
         'Disbands the current group chat and removes it from tracking.',
@@ -327,6 +335,7 @@ export async function handleEvent(body) {
       await sendGroupMessage(chatId, '👋 Disbanding this group. Goodbye!');
       await disbandGroupChat(chatId);
       await deleteLastActivity(chatId);
+      await deleteUntracked(chatId);
       return;
     }
 
@@ -356,6 +365,23 @@ export async function handleEvent(body) {
       const message = formatCompanyInfo(info);
       
       await sendGroupMessage(event.message.chat_id, message);
+      return;
+    }
+
+    // /untrack — stop inactivity reminders for this group
+    if (event.message.chat_type === 'group' && text === UNTRACK_TRIGGER_KEYWORD) {
+      const chatId = event.message.chat_id;
+      await untrackGroup(chatId);
+      await sendGroupMessage(chatId, '🔕 Inactivity reminders have been disabled for this group. Type */track* to re-enable.');
+      return;
+    }
+
+    // /track — resume inactivity reminders for this group
+    if (event.message.chat_type === 'group' && text === TRACK_TRIGGER_KEYWORD) {
+      const chatId = event.message.chat_id;
+      await trackGroup(chatId);
+      await setLastActivity(chatId); // reset timer from now
+      await sendGroupMessage(chatId, '🔔 Inactivity reminders have been re-enabled for this group. Timer reset from now.');
       return;
     }
 
