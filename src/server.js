@@ -4,6 +4,7 @@ import { handleEvent, handleNewVoice } from './bot.js';
 import { exchangeCodeForToken, refreshUserToken } from './lark/auth.js';
 import { saveUserTokens, getLastActivity, setLastActivity, isGroupUntracked } from './tokenStore.js';
 import { listClientChats, getGroupMembers, sendGroupMessage } from './lark/messenger.js';
+import { getMapData } from './lark/map.js';
 
 
 const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
@@ -71,6 +72,20 @@ app.post('/voice-webhook', async (req, res) => {
 
 app.get('/ping', (req, res) => {
   res.json({ status: 'alive' });
+});
+
+app.get('/pins', async (req, res) => {
+  if (req.headers.authorization !== `Bearer ${process.env.MAP_API_KEY}`) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+
+  try {
+    const data = await getMapData();
+    res.json(data);
+  } catch (error) {
+    console.error('Failed to fetch map data:', error.message);
+    res.status(502).json({ error: error.message });
+  }
 });
 
 const PORT = process.env.PORT || 3000;
