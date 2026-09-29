@@ -16,7 +16,7 @@ function text(field) {
   return String(field);
 }
 
-async function listAllRecords(tableId) {
+async function listAllRecords(tableId, viewId) {
   const token = await getTenantAccessToken();
   let records = [];
   let pageToken = '';
@@ -26,6 +26,7 @@ async function listAllRecords(tableId) {
       `https://open.larksuite.com/open-apis/bitable/v1/apps/${BASE_APP_TOKEN}/tables/${tableId}/records`
     );
     url.searchParams.set('page_size', '100');
+    if (viewId) url.searchParams.set('view_id', viewId);
     if (pageToken) url.searchParams.set('page_token', pageToken);
 
     const response = await fetch(url, {
@@ -46,15 +47,14 @@ async function listAllRecords(tableId) {
 
 export async function getMapData() {
   const [groupRecords, pinRecords] = await Promise.all([
-    listAllRecords(GROUPS_TABLE_ID),
+    // Passing a view_id is what makes manual drag-order in the Lark UI
+    // actually reflected here — without it, the API's row order has no
+    // defined relationship to what you see when dragging rows in Base.
+    listAllRecords(GROUPS_TABLE_ID, process.env.MAP_GROUPS_VIEW_ID),
     listAllRecords(PINS_TABLE_ID),
   ]);
 
-  // Order comes from each record's position in the table's default view —
-  // i.e. whatever order the rows are in when you look at the Groups table.
-  // Drag rows in Lark to reorder the map's toggle buttons; just make sure
-  // that view has no active sort/filter, since either would override it.
-  const groups = groupRecords
+  const allGroups = groupRecords
     .map((r, index) => ({
       id: text(r.fields['Group ID']),
       label: text(r.fields['Label']) || text(r.fields['Group ID']),
@@ -62,11 +62,18 @@ export async function getMapData() {
       active: r.fields['Active By Default'] === true,
       order: index,
       popupStyle: text(r.fields['Popup Style']) || 'Label Only',
+      // Single select, not checkbox — see note in SETUP.md on why. Blank or
+      // "Yes" both mean shown; only an explicit "No" hides the group.
+      showOnMap: text(r.fields['Show On Map']) !== 'No',
     }))
     .filter((g) => g.id);
 
+  const hiddenGroupIds = new Set(allGroups.filter((g) => !g.showOnMap).map((g) => g.id));
+  const groups = allGroups
+    .filter((g) => g.showOnMap)
+    .map(({ showOnMap, ...g }) => g); // drop the internal-only flag from the response
+
   const pins = pinRecords
-    .filter((r) => r.fields['Show On Map'] !== false) // default to shown if blank
     .map((r) => ({
       name: text(r.fields['Name']),
       lat: Number(r.fields['Latitude']),
@@ -74,7 +81,8 @@ export async function getMapData() {
       note: text(r.fields['Note']),
       group: text(r.fields['Group']),
     }))
-    .filter((p) => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    .filter((p) => p.name && Number.isFinite(p.lat) && Number.isFinite(p.lng))
+    .filter((p) => !hiddenGroupIds.has(p.group)); // hide pins that belong to a hidden group
 
   return { groups, pins };
 }
