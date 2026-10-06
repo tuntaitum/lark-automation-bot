@@ -74,6 +74,13 @@ export async function getMapData() {
     .map(({ showOnMap, ...g }) => g); // drop the internal-only flag from the response
 
   const pins = pinRecords
+    // Subrecords (e.g. crossdock outlets nested under a DC) share the same
+    // table and column headers as normal pins, so they'd otherwise show up
+    // as extra overlapping labels at the same coordinates. Type: "Cross
+    // Dock" marks these explicitly — relying on "the parent record always
+    // comes first in the API response" isn't something Lark documents or
+    // guarantees, so it's not safe to depend on silently.
+    .filter((r) => text(r.fields['Type']) !== 'Cross Dock')
     .map((r) => ({
       name: text(r.fields['Name']),
       lat: Number(r.fields['Latitude']),
