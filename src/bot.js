@@ -134,9 +134,16 @@ export async function handleEvent(body) {
       }
 
       const members = [...new Set([...DEFAULT_3PL_MEMBER_IDS, senderUserId, CEO_USER_ID])];
-      const chatId = await createGroupChat(`${clientName} - 3PL`, members);
+
+      // run in parallel
+      const [fileLink, chatId] = await Promise.all([
+        createNoteFile(clientName),
+        createGroupChat(`${clientName} - 3PL`, members),
+      ]);
 
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: 3PL. `);
+      const messageId = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${fileLink}`);
+      await pinMessage(messageId);
       await sendDirectMessage(senderUserId, `✅ Done! 3PL group created for *${clientName}*.`);
       return;
     }
@@ -154,14 +161,15 @@ export async function handleEvent(body) {
 
       // run in parallel
       const [fileLink, chatId] = await Promise.all([
-        copyTemplate(clientName),
+        createNoteFile(clientName),
         createGroupChat(`${clientName} - Veggie Solution`, members),
       ]);
 
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: Veggie Solution. `);
-      const messageId = await sendGroupMessage(chatId, `📋 Supply Knowledge Sheet created for *${clientName}*:\n${fileLink}`);
+      const messageId = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${fileLink}`);
       await pinMessage(messageId);
-      await sendDirectMessage(senderUserId, `✅ Done! Veggie Solution group and Supply Knowledge sheet created for *${clientName}*.`);
+      await sendGroupMessage(chatId, `To create a supply knowledge sheet, type /SNsheet`);
+      await sendDirectMessage(senderUserId, `✅ Done! Veggie Solution group created for *${clientName}*.`);
       return;
     }
 
