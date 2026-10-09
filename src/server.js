@@ -101,7 +101,7 @@ async function checkGroupActivity() {
     const { veggiChats, tplChats } = await listClientChats();
     const allChats = [...veggiChats, ...tplChats];
     const now = Date.now();
-    const THRESHOLD = 72 * 60 * 60 * 1000; // 72 hours in ms
+    const THRESHOLD = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 
     for (const chat of allChats) {
       // skip untracked groups
@@ -122,7 +122,7 @@ async function checkGroupActivity() {
         console.log('Members:', JSON.stringify(members, null, 2));
         await sendGroupMessage(
           chat.chat_id,
-          `<at user_id="all">Everyone</at>\n\n⏰ No activity in over 72 hours. Is there any progress with this client, or should this group be disbanded?\n\nType /disband to disband this group.`
+          `<at user_id="all">Everyone</at>\n\n⏰ No activity in over 7 days. Is there any progress with this client, or should this group be disbanded?\n\nType /disband to disband this group, or /untrack to remove this group from tracking.`
         );
 
         // reset timer after bot pings
