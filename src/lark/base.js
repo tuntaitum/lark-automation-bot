@@ -5,6 +5,8 @@ const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
 const BASE_APP_TOKEN = process.env.STORY_BASE_APP_TOKEN;
 const TASK_TABLE_ID = process.env.STORY_TASK_TABLE_ID;
 const STORY_TABLE_ID = process.env.STORY_TABLE_ID;
+const SUPPLY_BASE_APP_TOKEN = process.env.SUPPLY_BASE_APP_TOKEN;
+const SUPPLY_ENQUIRY_TABLE_ID = process.env.SUPPLY_ENQUIRY_TABLE_ID;
 
 function extractFieldValue(field) {
   if (!field) return '-';
@@ -149,4 +151,59 @@ export function formatStoryMessage(clientName, taskRecords, storyRecords) {
   }
 
   return lines.join('\n'); 
+}
+
+// Must match your Base column names exactly
+const SUPPLY_ENQUIRY_FIELD_NAMES = {
+  product: 'Product / Client / Topic',
+  itemCode: 'Item Code',
+  request: 'My Request',
+  assignedTo: 'Assigned To',
+  dueDate: 'Due Date',
+};
+
+export async function createSupplyRequestRecord(values) {
+  const token = await getTenantAccessToken();
+
+  const fields = {
+    [SUPPLY_ENQUIRY_FIELD_NAMES.product]: values.product,
+    // If "Assigned To" is a Person field, this must be [{ id: 'their_user_id' }]
+    // and the URL needs ?user_id_type=user_id. As written it assumes a text field.
+    [SUPPLY_ENQUIRY_FIELD_NAMES.assignedTo]: values.assignedTo,
+  };
+  if (values.itemCode) fields[SUPPLY_ENQUIRY_FIELD_NAMES.itemCode] = values.itemCode;
+  if (values.request) fields[SUPPLY_ENQUIRY_FIELD_NAMES.request] = values.request;
+  if (values.dueDate) {
+    // Base date fields want a millisecond timestamp
+    fields[SUPPLY_ENQUIRY_FIELD_NAMES.dueDate] = new Date(`${values.dueDate}T00:00:00+07:00`).getTime();
+  }
+
+  const response = await fetch(
+    `https://open.larksuite.com/open-apis/bitable/v1/apps/${SUPPLY_BASE_APP_TOKEN}/tables/${SUPPLY_ENQUIRY_TABLE_ID}/records`,
+    {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fields }),
+    }
+  );
+
+  const data = await response.json();
+  if (data.code !== 0) throw new Error(`Failed to create supply request record: ${data.msg}`);
+  return data.data?.record?.record_id;
+}
+
+export async function sendSupplyWorkflowWebhook(payload) {
+  const url = process.env.SUPPLY_WORKFLOW_WEBHOOK_URL;
+  if (!url) {
+    console.log('SUPPLY_WORKFLOW_WEBHOOK_URL not set, skipping workflow webhook');
+    return;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) throw new Error(`Workflow webhook failed: HTTP ${response.status}`);
 }

@@ -87,3 +87,9 @@ export async function deleteUntracked(chatId) {
     console.error('Failed to delete untracked key:', error.message);
   }
 }
+
+// Returns true only for the first caller. SET ... NX is atomic, so a double-click can't submit twice.
+export async function claimSupplyRequest(messageId) {
+  const result = await redis.set(`supplyrequest:${messageId}`, '1', 'EX', 60 * 60 * 24 * 30, 'NX');
+  return result === 'OK';
+}

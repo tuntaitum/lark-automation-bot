@@ -391,3 +391,120 @@ export async function sendVoiceCard(chatId, body) {
 
   return data.data?.message_id;
 }
+
+function supplyRequestFormCard(assignee) {
+  return {
+    schema: '2.0',
+    header: {
+      title: { tag: 'plain_text', content: '📦 Create New Supply Base Enquiry' },
+      template: 'blue',
+    },
+    body: {
+      elements: [
+        { tag: 'markdown', content: `**Assigned to:** ${assignee}` },
+        {
+          tag: 'form',
+          name: 'supply_request_form',
+          elements: [
+            {
+              tag: 'input',
+              name: 'product',
+              required: true,
+              label: { tag: 'plain_text', content: 'Product / Client / Topic' },
+              label_position: 'top',
+              max_length: 100,
+            },
+            {
+              tag: 'input',
+              name: 'item_code',
+              required: false,
+              label: { tag: 'plain_text', content: 'Item Code (if applicable)' },
+              label_position: 'top',
+              max_length: 100,
+            },
+            {
+              tag: 'input',
+              name: 'request',
+              required: false,
+              input_type: 'multiline_text',
+              rows: 3,
+              auto_resize: true,
+              max_rows: 6,
+              label: { tag: 'plain_text', content: 'My Request (optional)' },
+              label_position: 'top',
+              max_length: 1000,
+            },
+            { tag: 'markdown', content: '**Due Date (optional)**' },
+            {
+              tag: 'date_picker',
+              name: 'due_date',
+              required: false,
+              placeholder: { tag: 'plain_text', content: 'Select a date' },
+              width: 'fill',
+            },
+            {
+              tag: 'button',
+              name: 'submit_btn',
+              text: { tag: 'plain_text', content: 'Submit request' },
+              type: 'primary',
+              form_action_type: 'submit',
+              behaviors: [{ type: 'callback', value: { action: 'supply_request' } }],
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+// Read-only version that replaces the form after submission
+export function supplyRequestSubmittedCard(values) {
+  const when = new Date().toLocaleString('en-GB', {
+    timeZone: 'Asia/Bangkok', dateStyle: 'medium', timeStyle: 'short',
+  });
+
+  return {
+    schema: '2.0',
+    header: {
+      title: { tag: 'plain_text', content: '✅ Supply Base Enquiry submitted' },
+      template: 'green',
+    },
+    body: {
+      elements: [
+        {
+          tag: 'markdown',
+          content: [
+            `**Product / Client / Topic:** ${values.product}`,
+            `**Item Code:** ${values.itemCode || '-'}`,
+            `**My Request:** ${values.request || '-'}`,
+            `**Assigned to:** ${values.assignedTo}`,
+            `**Due Date:** ${values.dueDate || '-'}`,
+            '',
+            `Submitted by Loppana · ${when}`,
+          ].join('\n'),
+        },
+      ],
+    },
+  };
+}
+
+export async function sendSupplyRequestCard(chatId, assignee) {
+  const token = await getTenantAccessToken();
+
+  const response = await fetch('https://open.larksuite.com/open-apis/im/v1/messages?receive_id_type=chat_id', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      receive_id: chatId,
+      msg_type: 'interactive',
+      content: JSON.stringify(supplyRequestFormCard(assignee)),
+    }),
+  });
+
+  const data = await response.json();
+  if (data.code !== 0) throw new Error(`Failed to send supply request card: ${data.msg}`);
+  return data.data?.message_id;
+}

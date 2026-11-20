@@ -57,6 +57,15 @@ app.post('/webhook', async (req, res) => {
     return res.json({ challenge: body.challenge });
   }
 
+  if (body?.header?.event_type === 'card.action.trigger') {
+    try {
+      return res.json(await handleCardAction(body.event));
+    } catch (error) {
+      console.error('Card action error:', error.message);
+      return res.json({ toast: { type: 'error', content: 'Something went wrong, please try again.' } });
+    }
+  }
+
   res.status(200).json({ success: true });
   await handleEvent(body);
 });

@@ -1,7 +1,7 @@
-import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats, disbandGroupChat, getGroupMembers, sendAuthCard, sendVoiceCard } from './lark/messenger.js';
+import { sendDirectMessage, sendGroupMessage, sendGroupMention, createGroupChat, getGroupInfo, renameGroupChat, pinMessage, listClientChats, disbandGroupChat, getGroupMembers, sendAuthCard, sendVoiceCard, sendSupplyRequestCard, supplyRequestSubmittedCard } from './lark/messenger.js';
 import { copyTemplate, createNoteFile } from './lark/drive.js';
-import { getUserTokens, setLastActivity, deleteLastActivity, untrackGroup, trackGroup, deleteUntracked } from './tokenStore.js';
-import { getClientStory, formatStoryMessage } from './lark/base.js';
+import { getUserTokens, setLastActivity, deleteLastActivity, untrackGroup, trackGroup, deleteUntracked, claimSupplyRequest } from './tokenStore.js';
+import { getClientStory, formatStoryMessage, createSupplyRequestRecord, sendSupplyWorkflowWebhook } from './lark/base.js';
 import { createTask } from './lark/tasks.js';
 import { getCompanyInfo, formatCompanyInfo } from './lark/dbd.js';
 
@@ -21,6 +21,7 @@ const CINFO_TRIGGER_KEYWORD = '/cinfo';
 const NOTEFILE_TRIGGER_KEYWORD = '/notefile';
 const UNTRACK_TRIGGER_KEYWORD = '/untrack';
 const TRACK_TRIGGER_KEYWORD = '/track';
+const MAIN_SUPPLY_REQUEST_KEYWORD = '/supplyrequest';
 
 const DEFAULT_VEGGIES_MEMBER_IDS = process.env.DEFAULT_VEGGIES_MEMBER_IDS
   ? process.env.DEFAULT_VEGGIES_MEMBER_IDS.split(',').map(id => id.trim())
@@ -32,6 +33,8 @@ const DEFAULT_3PL_MEMBER_IDS = process.env.DEFAULT_3PL_MEMBER_IDS
 
 const CEO_USER_ID = process.env.CEO_USER_ID;
 const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
+
+const SUPPLY_ASSIGNEE = '<at user_id="1g2bbee5">Name</at>';
 
 export async function handleEvent(body) {
   try {
@@ -393,6 +396,20 @@ export async function handleEvent(body) {
       return;
     }
 
+    // /supplyrequest — send supply request form as card message in group chat
+    if (event.message.chat_type === 'group' && text === MAIN_SUPPLY_REQUEST_KEYWORD) {
+      const chatId = event.message.chat_id;
+      if (senderUserId !== CEO_USER_ID && senderUserId !== BOT_OWNER_ID) {
+        const denied = '🚫 Only the CEO can create a supply base enquiry.';
+        if (event.message.chat_type === 'p2p') await sendDirectMessage(senderUserId, denied);
+        else await sendGroupMessage(chatId, denied);
+        return;
+      }
+
+      await sendSupplyRequestCard(chatId, SUPPLY_ASSIGNEE);
+      return;
+    }
+
     // unrecognized command
     await sendDirectMessage(senderUserId, `❓ Unknown command. Type */help* to see available commands.`);
 
@@ -458,4 +475,69 @@ export async function handleNewVoice(body) {
       return;
     }
   }
+}
+
+// Normalises "2026/08/01", "2026-08-01" or "2026-08-01 +0700" to "2026-08-01"
+function parseDueDate(raw) {
+  if (!raw) return '';
+  const d = String(raw).replace(/\//g, '-').slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : '';
+}
+
+async function processSupplyRequest(values) {
+  let step = 'creating Base record';
+  try {
+    const recordId = await createSupplyRequestRecord(values);
+
+    step = 'sending workflow webhook';
+    await sendSupplyWorkflowWebhook({ ...values, recordId });
+  } catch (error) {
+    console.error(`Supply request failed while ${step}:`, error.message);
+    // The card already shows "submitted", so make sure the data isn't lost
+    await sendDirectMessage(
+      BOT_OWNER_ID,
+      `⚠️ Supply request failed while ${step}: ${error.message}\n\n${JSON.stringify(values, null, 2)}`
+    ).catch(() => {});
+  }
+}
+
+// Must return the callback response body within ~3 seconds
+export async function handleCardAction(event) {
+  const value = event?.action?.value;
+  if (value?.action !== 'supply_request') return {};
+
+  console.log('Card action operator:', JSON.stringify(event.operator));
+
+  // 1. Only the CEO may submit
+  if (event.operator?.user_id !== CEO_USER_ID) {
+    return { toast: { type: 'error', content: 'Only the CEO can submit this form.' } };
+  }
+
+  // 2. Only one submission per card
+  const messageId = event.context?.open_message_id;
+  const claimed = await claimSupplyRequest(messageId);
+  if (!claimed) {
+    return { toast: { type: 'warning', content: 'This enquiry has already been submitted.' } };
+  }
+
+  // 3. Collect values
+  const form = event.action.form_value || {};
+  console.log('Supply request form_value:', JSON.stringify(form));
+
+  const values = {
+    product: form.product?.trim() || '',
+    itemCode: form.item_code?.trim() || '',
+    request: form.request?.trim() || '',
+    assignedTo: SUPPLY_ASSIGNEE,
+    dueDate: parseDueDate(form.due_date),
+  };
+
+  // 4. Save in the background so we answer inside the 3-second window
+  processSupplyRequest(values);
+
+  // 5. Replace the card with the read-only version
+  return {
+    toast: { type: 'success', content: 'Submitted' },
+    card: { type: 'raw', data: supplyRequestSubmittedCard(values) },
+  };
 }
