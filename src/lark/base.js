@@ -166,20 +166,20 @@ export async function createSupplyRequestRecord(values) {
   const token = await getTenantAccessToken();
 
   const fields = {
-    [SUPPLY_ENQUIRY_FIELD_NAMES.product]: values.product,
+    'Product / Client / Topic': values.product,
     // If "Assigned To" is a Person field, this must be [{ id: 'their_user_id' }]
     // and the URL needs ?user_id_type=user_id. As written it assumes a text field.
-    [SUPPLY_ENQUIRY_FIELD_NAMES.assignedTo]: values.assignedTo,
+    'Assigned to': [{ id: '1g2bbee5' }],
   };
-  if (values.itemCode) fields[SUPPLY_ENQUIRY_FIELD_NAMES.itemCode] = values.itemCode;
-  if (values.request) fields[SUPPLY_ENQUIRY_FIELD_NAMES.request] = values.request;
+  if (values.itemCode) fields['Item Code'] = values.itemCode;
+  if (values.request) fields['My request'] = values.request;
   if (values.dueDate) {
     // Base date fields want a millisecond timestamp
-    fields[SUPPLY_ENQUIRY_FIELD_NAMES.dueDate] = new Date(`${values.dueDate}T00:00:00+07:00`).getTime();
+    fields['Due Date'] = new Date(`${values.dueDate}T00:00:00+07:00`).getTime();
   }
 
   const response = await fetch(
-    `https://open.larksuite.com/open-apis/bitable/v1/apps/${SUPPLY_BASE_APP_TOKEN}/tables/${SUPPLY_ENQUIRY_TABLE_ID}/records`,
+    `https://open.larksuite.com/open-apis/bitable/v1/apps/${SUPPLY_BASE_APP_TOKEN}/tables/${SUPPLY_ENQUIRY_TABLE_ID}/records?user_id_type=user_id`,
     {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
