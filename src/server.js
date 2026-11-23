@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
-import { handleEvent, handleNewVoice } from './bot.js';
+import { handleEvent, handleNewVoice, handleCardAction } from './bot.js';
 import { exchangeCodeForToken, refreshUserToken } from './lark/auth.js';
 import { saveUserTokens, getLastActivity, setLastActivity, isGroupUntracked } from './tokenStore.js';
 import { listClientChats, getGroupMembers, sendGroupMessage } from './lark/messenger.js';

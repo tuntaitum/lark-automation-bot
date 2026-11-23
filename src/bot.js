@@ -509,7 +509,7 @@ export async function handleCardAction(event) {
   console.log('Card action operator:', JSON.stringify(event.operator));
 
   // 1. Only the CEO may submit
-  if (event.operator?.user_id !== CEO_USER_ID) {
+  if (event.operator?.user_id !== CEO_USER_ID && event.operator?.user_id !== BOT_OWNER_ID) {
     return { toast: { type: 'error', content: 'Only the CEO can submit this form.' } };
   }
 
