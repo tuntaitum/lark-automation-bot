@@ -446,10 +446,10 @@ export async function handleNewVoice(body) {
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: Veggie Solution. \nTo create a supply knowledge sheet, type /SNsheet`);
       await sendDirectMessage(BOT_OWNER_ID, `✅ Done! Veggie Solution group created for *${clientName}*.`);
       const voiceCard = await sendVoiceCard(chatId, body);
-      const noteFileLink = await createNoteFile(clientName);
-      const noteFilemessage = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${noteFileLink}`);
+      // const noteFileLink = await createNoteFile(clientName);
+      // const noteFilemessage = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${noteFileLink}`);
       await pinMessage(voiceCard);
-      await pinMessage(noteFilemessage);
+      // await pinMessage(noteFilemessage);
       return;
     } else {
       const members = [...new Set([...DEFAULT_3PL_MEMBER_IDS, BOT_OWNER_ID, CEO_USER_ID])];
@@ -458,10 +458,10 @@ export async function handleNewVoice(body) {
       await sendGroupMessage(chatId, `👋 Group created for *${clientName}*, service: 3PL.`);
       await sendDirectMessage(BOT_OWNER_ID, `✅ Done! 3PL group created for *${clientName}*.`);
       const voiceCard = await sendVoiceCard(chatId, body);
-      const noteFileLink = await createNoteFile(clientName);
-      const noteFilemessage = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${noteFileLink}`);
+      // const noteFileLink = await createNoteFile(clientName);
+      // const noteFilemessage = await sendGroupMessage(chatId, `📋 Note File created for *${clientName}*:\n${noteFileLink}`);
       await pinMessage(voiceCard);
-      await pinMessage(noteFilemessage);
+      // await pinMessage(noteFilemessage);
       return;
     }
 
